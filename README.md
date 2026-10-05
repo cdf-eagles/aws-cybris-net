@@ -259,13 +259,27 @@ sh scripts/configure-github.sh
 
 ## Continuous integration
 
-Target state, reached stack by stack once a stack is adopted and its plan is
-clean from a workstation:
+Reached stack by stack: a stack joins CI once it is adopted and its plan is
+clean from a workstation.
 
 | Workflow | Trigger | Role | Does |
 |---|---|---|---|
-| Plan | pull request touching a stack | `gha-aws-cybris-net-plan` (read-only plus state read) | `tofu plan` per changed stack, result posted as a pull-request comment; fails the check if the plan would destroy or replace anything |
-| Apply | push to `main` touching a stack, after the `production` environment's required review | `gha-aws-cybris-net-apply` (the EngineerLead policy) | `tofu apply` of the plan file the Plan workflow saved for that commit |
+| Validate | every pull request | none | format, validate, tflint, Checkov |
+| Plan | every pull request | `gha-aws-cybris-net-plan` (ReadOnlyAccess plus state read) | `tofu plan` of `20-platform` and `30-hosts/persephone`, summary line in the job summary; **fails if the plan would destroy or replace anything** |
+| Apply | not yet | `gha-aws-cybris-net-apply` (the EngineerLead policy) | decided 2026-10-05: applies stay on a workstation until the rebuild of the host is done; the workflow and its role follow afterwards |
+
+The trust policies of the OIDC roles name each repository by both subject
+shapes GitHub issues, the original and the immutable one with owner and
+repository IDs (`10-account`, `github_repository_ids`); a new repository
+needs its ID added there before its first run.
+
+The Plan workflow needs two repository secrets, set once by hand:
+`AWS_PLAN_ROLE_ARN` (the `gha_aws_cybris_net_plan_role_arn` output of
+`10-account`; it carries the account ID, which is why it is a secret) and
+`TF_VAR_KEY_PAIR_NAME` (the value the host stack's `op.env` supplies). The
+job exchanges its OpenID Connect token for a session with the runner's own
+AWS command line interface (CLI), so no third-party action handles
+credentials. Plans take no state lock; nothing in CI writes to the bucket.
 
 `00-bootstrap` and `10-account` are applied from a workstation, not CI:
 the first owns the bucket the CI roles read state from, the second creates

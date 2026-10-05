@@ -5,8 +5,8 @@ resource "aws_iam_openid_connect_provider" "github" {
 
 data "aws_iam_policy_document" "github_trust" {
   for_each = {
-    freebsd_cloud_img_publish = "repo:${var.github_owner}/freebsd-cloud-img:ref:refs/heads/main"
-    aws_cybris_net_plan       = "repo:${var.github_owner}/aws-cybris-net:pull_request"
+    freebsd_cloud_img_publish = { repository = "freebsd-cloud-img", claim = "ref:refs/heads/main" }
+    aws_cybris_net_plan       = { repository = "aws-cybris-net", claim = "pull_request" }
   }
 
   statement {
@@ -24,10 +24,17 @@ data "aws_iam_policy_document" "github_trust" {
       values   = ["sts.amazonaws.com"]
     }
 
+    # GitHub issues the subject in one of two exact shapes: the original
+    # `repo:<owner>/<repository>:<claim>`, and the immutable form carrying the
+    # owner and repository IDs, which every repository created after
+    # 2026-07-15 gets. Both are listed, neither is a wildcard.
     condition {
       test     = "StringEquals"
       variable = "${local.github_oidc_issuer}:sub"
-      values   = [each.value]
+      values = [
+        "repo:${var.github_owner}/${each.value.repository}:${each.value.claim}",
+        "repo:${var.github_owner}@${var.github_owner_id}/${each.value.repository}@${var.github_repository_ids[each.value.repository]}:${each.value.claim}",
+      ]
     }
   }
 }

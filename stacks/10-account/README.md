@@ -223,6 +223,8 @@ No modules.
 | <a name="input_contact_phone"></a> [contact\_phone](#input\_contact\_phone) | Phone number for the alternate contacts, international format; supplied by op.env. | `string` | n/a | yes |
 | <a name="input_contact_title"></a> [contact\_title](#input\_contact\_title) | Title for the alternate contacts; supplied by op.env. | `string` | n/a | yes |
 | <a name="input_github_owner"></a> [github\_owner](#input\_github\_owner) | GitHub organisation whose repositories may assume the OIDC roles. | `string` | `"cdf-eagles"` | no |
+| <a name="input_github_owner_id"></a> [github\_owner\_id](#input\_github\_owner\_id) | Numeric ID of the GitHub owner; GitHub embeds it in the OpenID Connect subject of repositories created after 2026-07-15 (`repo:<owner>@<id>/<repository>@<id>:...`). | `number` | `59536280` | no |
+| <a name="input_github_repository_ids"></a> [github\_repository\_ids](#input\_github\_repository\_ids) | Numeric IDs of the repositories that assume the OIDC roles, by name; part of the subject for repositories on the immutable format. | `map(number)` | <pre>{<br/>  "aws-cybris-net": 1404901186,<br/>  "freebsd-cloud-img": 1129794967<br/>}</pre> | no |
 | <a name="input_log_retention_days"></a> [log\_retention\_days](#input\_log\_retention\_days) | Days CloudTrail and Config objects are kept before they expire. | `number` | `400` | no |
 | <a name="input_region"></a> [region](#input\_region) | Home region: where the single-region resources of this stack live. | `string` | `"us-east-1"` | no |
 | <a name="input_state_bucket_name"></a> [state\_bucket\_name](#input\_state\_bucket\_name) | Bucket that stores OpenTofu state, from 00-bootstrap. | `string` | `"cybris-net-tf-bucket"` | no |

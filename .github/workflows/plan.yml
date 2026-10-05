@@ -1,0 +1,102 @@
+---
+name: Plan
+
+# A read-only plan of every stack CI is allowed to touch, on every pull
+# request, through the OpenID Connect role that holds ReadOnlyAccess and
+# state read. Nothing is applied from CI yet: applies run from a workstation
+# until the rebuild (item 129) is done. The workflow runs on every pull
+# request, with no path filter, because the main ruleset requires its checks.
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+# Plans take no state lock (-lock=false), so a cancelled run leaves nothing
+# behind in the bucket.
+concurrency:
+  group: plan-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  AWS_REGION: us-east-1
+  AWS_DEFAULT_REGION: us-east-1
+  TF_IN_AUTOMATION: "1"
+
+jobs:
+  plan:
+    name: plan (${{ matrix.stack }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        stack:
+          - 20-platform
+          - 30-hosts/persephone
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2.0.2
+        with:
+          tofu_version: 1.13.1
+          tofu_wrapper: false
+      # The runner's own AWS command line exchanges the job's OpenID Connect
+      # token for a session; no third-party action is needed for that.
+      - name: Assume the plan role
+        env:
+          ROLE_ARN: ${{ secrets.AWS_PLAN_ROLE_ARN }}
+        run: |
+          set -eu
+          token=$(curl -sS -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=sts.amazonaws.com" | jq -r .value)
+          read -r key secret session < <(aws sts assume-role-with-web-identity \
+            --role-arn "$ROLE_ARN" \
+            --role-session-name "gha-plan-${GITHUB_RUN_ID}" \
+            --web-identity-token "$token" \
+            --duration-seconds 3600 \
+            --query 'Credentials.[AccessKeyId,SecretAccessKey,SessionToken]' \
+            --output text)
+          echo "::add-mask::$secret"
+          echo "::add-mask::$session"
+          {
+            echo "AWS_ACCESS_KEY_ID=$key"
+            echo "AWS_SECRET_ACCESS_KEY=$secret"
+            echo "AWS_SESSION_TOKEN=$session"
+          } >> "$GITHUB_ENV"
+          aws sts get-caller-identity --query Arn --output text | sed 's/[0-9]\{12\}/<account id>/'
+      - name: Plan
+        working-directory: stacks/${{ matrix.stack }}
+        env:
+          TF_VAR_key_pair_name: ${{ secrets.TF_VAR_KEY_PAIR_NAME }}
+        run: |
+          set -u
+          tofu init -input=false >/dev/null
+          set +e
+          tofu plan -input=false -lock=false -no-color -detailed-exitcode -out=tf.plan 2>&1 | tee plan.txt
+          rc=${PIPESTATUS[0]}
+          set -e
+          {
+            echo "## plan (${{ matrix.stack }})"
+            echo '```'
+            grep -E '^(Plan:|No changes)' plan.txt || echo "(no summary line; see the job log)"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          [ "$rc" -ne 1 ]
+      # The repository's first rule, enforced by the check: nothing running
+      # is destroyed or replaced by an apply.
+      - name: Refuse a destroy or a replace
+        working-directory: stacks/${{ matrix.stack }}
+        run: |
+          set -eu
+          offenders=$(tofu show -json tf.plan | jq -r '
+            [.resource_changes[]? | select(.change.actions | index("delete")) | .address] | .[]')
+          if [ -n "$offenders" ]; then
+            echo "::error::the plan would destroy or replace:"
+            echo "$offenders"
+            exit 1
+          fi
+          echo "no destroy, no replace"

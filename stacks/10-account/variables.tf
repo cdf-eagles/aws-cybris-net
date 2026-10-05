@@ -63,3 +63,18 @@ variable "github_owner" {
   type        = string
   default     = "cdf-eagles"
 }
+
+variable "github_owner_id" {
+  description = "Numeric ID of the GitHub owner; GitHub embeds it in the OpenID Connect subject of repositories created after 2026-07-15 (`repo:<owner>@<id>/<repository>@<id>:...`)."
+  type        = number
+  default     = 59536280
+}
+
+variable "github_repository_ids" {
+  description = "Numeric IDs of the repositories that assume the OIDC roles, by name; part of the subject for repositories on the immutable format."
+  type        = map(number)
+  default = {
+    "aws-cybris-net"    = 1404901186
+    "freebsd-cloud-img" = 1129794967
+  }
+}
