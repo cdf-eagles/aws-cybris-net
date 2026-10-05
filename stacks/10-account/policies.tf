@@ -121,6 +121,19 @@ data "aws_iam_policy_document" "engineer_lead" {
   }
 
   statement {
+    sid       = "PassOnlySnapshotRole"
+    effect    = "Allow"
+    actions   = ["iam:PassRole"]
+    resources = [aws_iam_role.dlm.arn]
+
+    condition {
+      test     = "StringEquals"
+      variable = "iam:PassedToService"
+      values   = ["dlm.amazonaws.com"]
+    }
+  }
+
+  statement {
     sid       = "KeepStateHistory"
     effect    = "Deny"
     actions   = ["s3:DeleteObjectVersion"]

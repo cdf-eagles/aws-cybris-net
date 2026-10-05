@@ -3,6 +3,8 @@
 The account's identity, audit, and alerting baseline: Identity and Access
 Management (IAM) Identity Center groups, permission sets, and assignments;
 the OpenID Connect (OIDC) provider and the roles GitHub Actions assumes;
+the role Data Lifecycle Manager (DLM) assumes for the snapshot policy in
+`20-platform`;
 CloudTrail; GuardDuty; Amazon Web Services (AWS) Config (adopted); IAM Access Analyzer; the Simple
 Notification Service (SNS) topic that budget and GuardDuty alerts publish to;
 the cost budget (adopted); the alternate contacts; the password policy
@@ -18,7 +20,7 @@ the `import` blocks were removed once the state held the adopted resources.
 | Set | Group | Managed policy | Added | Session |
 |---|---|---|---|---|
 | AdministratorAccess | administrators | AdministratorAccess | guard rails | 1 h |
-| EngineerLead | engineers | PowerUserAccess | `EngineerLead` customer-managed policy (role reads, `PassRole` on `ec2-*`, no state-version deletion, no Identity Center writes), guard rails | 8 h |
+| EngineerLead | engineers | PowerUserAccess | `EngineerLead` customer-managed policy (role reads, `PassRole` on `ec2-*` and on the `dlm-snapshots` role, no state-version deletion, no Identity Center writes), guard rails | 8 h |
 | ReadOnly | read-only | ReadOnlyAccess | guard rails | 8 h |
 | BillingAccess | billing | job-function/Billing | guard rails | 4 h |
 
@@ -157,10 +159,12 @@ No modules.
 | [aws_iam_account_password_policy.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_account_password_policy) | resource |
 | [aws_iam_openid_connect_provider.github](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_openid_connect_provider) | resource |
 | [aws_iam_policy.engineer_lead](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_policy) | resource |
+| [aws_iam_role.dlm](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role) | resource |
 | [aws_iam_role.gha_aws_cybris_net_plan](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role) | resource |
 | [aws_iam_role.gha_freebsd_cloud_img_publish](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role) | resource |
 | [aws_iam_role_policy.gha_aws_cybris_net_plan_state](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy) | resource |
 | [aws_iam_role_policy.gha_freebsd_cloud_img_publish](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy) | resource |
+| [aws_iam_role_policy_attachment.dlm](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy_attachment) | resource |
 | [aws_iam_role_policy_attachment.gha_aws_cybris_net_plan_read_only](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy_attachment) | resource |
 | [aws_identitystore_group.administrators](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/identitystore_group) | resource |
 | [aws_identitystore_group.billing](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/identitystore_group) | resource |
@@ -195,6 +199,7 @@ No modules.
 | [aws_caller_identity.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/caller_identity) | data source |
 | [aws_iam_policy_document.account_alerts](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 | [aws_iam_policy_document.config_bucket](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
+| [aws_iam_policy_document.dlm_trust](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 | [aws_iam_policy_document.engineer_lead](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 | [aws_iam_policy_document.freebsd_images_publish](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 | [aws_iam_policy_document.github_trust](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
@@ -227,6 +232,7 @@ No modules.
 | Name | Description |
 | ---- | ----------- |
 | <a name="output_account_alerts_topic_arn"></a> [account\_alerts\_topic\_arn](#output\_account\_alerts\_topic\_arn) | SNS topic that budget and GuardDuty alerts publish to. |
+| <a name="output_dlm_role_arn"></a> [dlm\_role\_arn](#output\_dlm\_role\_arn) | Role that Data Lifecycle Manager assumes for the snapshot policy in 20-platform. |
 | <a name="output_engineer_lead_policy_arn"></a> [engineer\_lead\_policy\_arn](#output\_engineer\_lead\_policy\_arn) | Customer-managed policy shared by the EngineerLead permission set and the CI apply role. |
 | <a name="output_gha_aws_cybris_net_plan_role_arn"></a> [gha\_aws\_cybris\_net\_plan\_role\_arn](#output\_gha\_aws\_cybris\_net\_plan\_role\_arn) | Role the aws-cybris-net Plan workflow assumes through OIDC. |
 | <a name="output_gha_freebsd_cloud_img_publish_role_arn"></a> [gha\_freebsd\_cloud\_img\_publish\_role\_arn](#output\_gha\_freebsd\_cloud\_img\_publish\_role\_arn) | Role the freebsd-cloud-img publish jobs assume through OIDC. |

@@ -27,3 +27,8 @@ output "engineer_lead_policy_arn" {
   description = "Customer-managed policy shared by the EngineerLead permission set and the CI apply role."
   value       = aws_iam_policy.engineer_lead.arn
 }
+
+output "dlm_role_arn" {
+  description = "Role that Data Lifecycle Manager assumes for the snapshot policy in 20-platform."
+  value       = aws_iam_role.dlm.arn
+}
