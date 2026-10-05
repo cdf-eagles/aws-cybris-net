@@ -22,7 +22,9 @@ the `import` blocks were removed once the state held the adopted resources.
 | ReadOnly | read-only | ReadOnlyAccess | guard rails | 8 h |
 | BillingAccess | billing | job-function/Billing | guard rails | 4 h |
 
-The guard rails are one inline policy on every set: deny every request
+The guard rails are one inline policy on every set: allow the two `signin`
+actions the AWS MCP connector needs to open a session (nothing short of
+AdministratorAccess grants them); deny every request
 outside the allowed regions (`us-east-1`, `us-east-2`, `us-west-2`, chosen
 for a later high-availability design) except to global services; deny stopping or deleting
 CloudTrail, GuardDuty, Config, and Access Analyzer; deny terminating or
