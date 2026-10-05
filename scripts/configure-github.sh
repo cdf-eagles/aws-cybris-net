@@ -60,7 +60,7 @@ JSON
 echo "actions: allowed actions limited, default token read-only"
 
 # Ruleset on the default branch: pull request required (squash), the Validate
-# check required, signed commits, linear history, no force-push, no deletion.
+# and Plan checks required, signed commits, linear history, no force-push, no deletion.
 ruleset='{
   "name": "main",
   "target": "branch",
@@ -83,7 +83,11 @@ ruleset='{
     {"type": "required_status_checks", "parameters": {
       "strict_required_status_checks_policy": false,
       "do_not_enforce_on_create": false,
-      "required_status_checks": [{"context": "validate"}]
+      "required_status_checks": [
+        {"context": "validate"},
+        {"context": "plan (20-platform)"},
+        {"context": "plan (30-hosts/persephone)"}
+      ]
     }}
   ]
 }'
