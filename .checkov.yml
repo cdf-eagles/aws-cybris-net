@@ -1,0 +1,18 @@
+---
+branch: main
+directory:
+  - stacks
+  - modules
+framework:
+  - terraform
+download-external-modules: false
+evaluate-variables: true
+quiet: true
+summary-position: top
+skip-path:
+  - .terraform
+# Cross-region replication, access logging, and event notifications cost more than the state bucket's contents are worth.
+skip-check:
+  - CKV_AWS_144
+  - CKV_AWS_18
+  - CKV2_AWS_62

@@ -1,0 +1,5 @@
+---
+formatter: markdown table
+sort:
+  enabled: true
+  by: name

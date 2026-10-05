@@ -1,0 +1,29 @@
+# OpenTofu working directories and state. Lock files (.terraform.lock.hcl) are committed.
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+crash.log
+crash.*.log
+
+# Plan files and variable files that may hold secrets. *.auto.tfvars that are meant to be shared are committed.
+*.tfplan
+*tf.plan*
+*.tfvars
+*.tfvars.json
+!*.auto.tfvars
+
+# 1Password environment files name the vault and item; commit op.env.example instead.
+op.env
+
+# Local overrides and CLI configuration
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+
+# Editor and OS files
+*.swp
+.DS_Store
