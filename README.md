@@ -268,6 +268,11 @@ clean from a workstation.
 | Plan | every pull request | `gha-aws-cybris-net-plan` (ReadOnlyAccess plus state read) | `tofu plan` of `20-platform` and `30-hosts/persephone`, summary line in the job summary; **fails if the plan would destroy or replace anything** |
 | Apply | not yet | `gha-aws-cybris-net-apply` (the EngineerLead policy) | decided 2026-10-05: applies stay on a workstation until the rebuild of the host is done; the workflow and its role follow afterwards |
 
+The trust policies of the OIDC roles name each repository by both subject
+shapes GitHub issues, the original and the immutable one with owner and
+repository IDs (`10-account`, `github_repository_ids`); a new repository
+needs its ID added there before its first run.
+
 The Plan workflow needs two repository secrets, set once by hand:
 `AWS_PLAN_ROLE_ARN` (the `gha_aws_cybris_net_plan_role_arn` output of
 `10-account`; it carries the account ID, which is why it is a secret) and
