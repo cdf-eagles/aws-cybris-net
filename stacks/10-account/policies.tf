@@ -114,6 +114,34 @@ data "aws_iam_policy_document" "engineer_lead" {
     actions   = ["s3:DeleteObjectVersion"]
     resources = ["${local.state_bucket_arn}/*"]
   }
+
+  # PowerUserAccess excludes iam, organizations, and account but not the
+  # Identity Center services, which can grant the same rights.
+  statement {
+    sid    = "NoIdentityCenterWrites"
+    effect = "Deny"
+    actions = [
+      "sso:Attach*",
+      "sso:Create*",
+      "sso:Delete*",
+      "sso:Detach*",
+      "sso:Provision*",
+      "sso:Put*",
+      "sso:Update*",
+      "sso-directory:Add*",
+      "sso-directory:Create*",
+      "sso-directory:Delete*",
+      "sso-directory:Disable*",
+      "sso-directory:Enable*",
+      "sso-directory:Remove*",
+      "sso-directory:Update*",
+      "sso-directory:Verify*",
+      "identitystore:Create*",
+      "identitystore:Delete*",
+      "identitystore:Update*",
+    ]
+    resources = ["*"]
+  }
 }
 
 resource "aws_iam_policy" "engineer_lead" {
