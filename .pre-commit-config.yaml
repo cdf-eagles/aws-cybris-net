@@ -36,6 +36,10 @@ repos:
           - --hook-config=--add-to-existing-file=true
           - --hook-config=--create-file-if-not-exist=false
           - --args=--config=.terraform-docs.yml
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.11.0.1
+    hooks:
+      - id: shellcheck
   - repo: https://github.com/rhysd/actionlint
     rev: v1.7.12
     hooks:

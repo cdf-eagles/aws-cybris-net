@@ -237,6 +237,25 @@ blocks deleted in the commit that records the apply.
 workflow runs only on pull requests that change OpenTofu code or the check
 configuration, and needs no AWS credentials.
 
+## Repository settings
+
+`scripts/configure-github.sh` applies the GitHub settings with the GitHub
+CLI, signed in as an owner, and is safe to run again; `--show` prints the
+current state without changing it. It sets: squash as the only merge method
+with the branch deleted on merge; secret scanning with push protection;
+Dependabot alerts, security updates, and private vulnerability reporting;
+Actions limited to GitHub's own actions plus the two pinned third-party ones,
+with a read-only default token; and a ruleset on `main` that requires a pull
+request, the `validate` check, signed commits, and linear history, and
+forbids force-pushes and deletion. `.github/dependabot.yml` keeps the pinned
+actions and the provider constraints current with one grouped pull request a
+week, after a seven-day cooldown on new releases.
+
+```sh
+sh scripts/configure-github.sh --show
+sh scripts/configure-github.sh
+```
+
 ## Continuous integration
 
 Target state, reached stack by stack once a stack is adopted and its plan is
