@@ -1,0 +1,53 @@
+---
+name: Validate
+
+# Formatting, validation, and static checks only; needs no AWS credentials. The
+# plan and apply workflows are separate and use the OpenID Connect roles.
+on:
+  pull_request:
+    paths:
+      - "**.tf"
+      - "**.tfvars"
+      - ".checkov.yml"
+      - ".tflint.hcl"
+      - ".github/workflows/validate.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2.0.2
+        with:
+          tofu_version: 1.13.1
+      - uses: terraform-linters/setup-tflint@6ffdbaa3be476b3431f7275c26966ef32ff60337 # v6.3.2
+        with:
+          tflint_version: v0.64.0
+      - name: Format
+        run: tofu fmt -check -recursive -diff
+      - name: Validate every stack
+        run: |
+          set -eu
+          for d in stacks/*/; do
+            echo "== $d"
+            tofu -chdir="$d" init -backend=false -input=false >/dev/null
+            tofu -chdir="$d" validate
+          done
+      - name: tflint
+        run: |
+          tflint --init --config "$PWD/.tflint.hcl"
+          tflint --recursive --config "$PWD/.tflint.hcl"
+      - name: Checkov
+        run: |
+          pip install --quiet checkov
+          checkov --config-file .checkov.yml
