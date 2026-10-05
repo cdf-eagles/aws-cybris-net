@@ -18,7 +18,7 @@ the `import` blocks were removed once the state held the adopted resources.
 | Set | Group | Managed policy | Added | Session |
 |---|---|---|---|---|
 | AdministratorAccess | administrators | AdministratorAccess | guard rails | 1 h |
-| EngineerLead | engineers | PowerUserAccess | `EngineerLead` customer-managed policy, guard rails | 8 h |
+| EngineerLead | engineers | PowerUserAccess | `EngineerLead` customer-managed policy (role reads, `PassRole` on `ec2-*`, no state-version deletion, no Identity Center writes), guard rails | 8 h |
 | ReadOnly | read-only | ReadOnlyAccess | guard rails | 8 h |
 | BillingAccess | billing | job-function/Billing | guard rails | 4 h |
 
