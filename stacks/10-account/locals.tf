@@ -38,7 +38,7 @@ locals {
     "budgets", "ce", "cur", "billing", "invoicing", "payments", "consolidatedbilling",
     "freetier", "tax", "savingsplans", "cost-optimization-hub", "pricing",
     "route53", "route53domains", "cloudfront", "shield", "globalaccelerator", "waf",
-    "support", "trustedadvisor", "health", "notifications", "chatbot", "tag",
+    "support", "trustedadvisor", "health", "notifications", "chatbot", "tag", "signin",
     "resource-explorer-2", "servicequotas", "s3", "cloudshell", "q",
   ]
 }

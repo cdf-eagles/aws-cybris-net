@@ -1,6 +1,18 @@
 # Guard rails every permission set carries, in place of the service control
 # policies that cannot apply to an organization's management account.
 data "aws_iam_policy_document" "guardrails" {
+  # The AWS MCP server authorises a session through the signin service; no
+  # managed policy short of AdministratorAccess grants these two actions.
+  statement {
+    sid    = "AllowConnectorSignIn"
+    effect = "Allow"
+    actions = [
+      "signin:AuthorizeOAuth2Access",
+      "signin:CreateOAuth2Token",
+    ]
+    resources = ["*"]
+  }
+
   statement {
     sid         = "DenyOutsideHomeRegion"
     effect      = "Deny"

@@ -1,6 +1,7 @@
 # Changelog
 
 - 2026-10-05
+  - The guard-rail inline policy allows `signin:AuthorizeOAuth2Access` and `signin:CreateOAuth2Token`, and `signin` joins the global-services exemption, so the Claude AWS connector can open a session under the ReadOnly permission set; before, only AdministratorAccess carried those actions.
   - The `EngineerLead` policy denies every write to Identity Center (`sso`, `sso-directory`, `identitystore`), because `PowerUserAccess` excludes IAM, Organizations, and Account but not those services, which can grant the same rights by attaching a policy to a permission set or adding a member to a group.
   - GuardDuty's `RUNTIME_MONITORING` feature declares its three agent-management sub-features as disabled, because the service reports them and a plan that leaves them undeclared offers to remove them every time.
   - The permission sets allow three regions, `us-east-1`, `us-east-2`, and `us-west-2`, chosen for a later high-availability design, and GuardDuty runs a detector in each; findings are alerted from the home region only, because an EventBridge rule can target a topic in its own region alone.
