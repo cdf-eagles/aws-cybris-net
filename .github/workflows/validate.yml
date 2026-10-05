@@ -7,6 +7,7 @@ name: Validate
 # requires it: a required check that can be skipped blocks the merge instead.
 on:
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read

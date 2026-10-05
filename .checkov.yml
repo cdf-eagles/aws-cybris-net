@@ -16,3 +16,22 @@ skip-check:
   - CKV_AWS_144
   - CKV_AWS_18
   - CKV2_AWS_62
+# KMS on log buckets, CloudTrail, and SNS would add keys the cost plan retires; SSE-S3 is the chosen default.
+  - CKV_AWS_145
+  - CKV_AWS_35
+  - CKV_AWS_26
+# CloudTrail to CloudWatch Logs and an SNS topic per trail cost more than one instance's audit trail is worth.
+  - CKV2_AWS_10
+  - CKV_AWS_252
+# Config deliberately excludes the IAM resource types; the recorder is imported as it was set up.
+  - CKV2_AWS_45
+  - CKV2_AWS_48
+# Single account, no organization-level GuardDuty configuration.
+  - CKV2_AWS_3
+# The IAM password policy governs IAM users, of which this account keeps none; Identity Center authenticates people.
+  - CKV_AWS_9
+  - CKV_AWS_11
+  - CKV_AWS_12
+  - CKV_AWS_13
+  - CKV_AWS_14
+  - CKV_AWS_15

@@ -139,7 +139,8 @@ a `VAR=value tofu ...` prefix is not reliably alias-expanded.
 
 A stack that ever needs a secret (an application programming interface (API)
 token for a provider, say) gets an `op.env` next to its code, one variable per
-line, each value an `op://<vault>/<item>/<field>` reference:
+line, each value an `op://<vault>/<item>/<field>` reference (or
+`op://<vault>/<item>/<section>/<field>` when the item has sections):
 
 ```sh
 TF_VAR_provider_token = "op://<Vault Name>/<item>/credential"
