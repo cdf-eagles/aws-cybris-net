@@ -55,7 +55,7 @@ default; the Plan workflow reads the same values from repository secrets.
 
 `user_data.sh` runs once, as root, at the first boot of a new instance; the
 image's `ec2_configinit` runs it before `ec2_fetchkey` creates `ec2-user`.
-`templatefile()` fills in the login account's name and UID. In order, it:
+`templatefile()` fills in the login account's name, user ID (UID), and group ID (GID). In order, it:
 
 1. installs `python3` and `sudo` and gives `ec2-user` a sudo rule without a
    password, so Ansible can connect and become root;
@@ -64,10 +64,14 @@ image's `ec2_configinit` runs it before `ec2_fetchkey` creates `ec2-user`.
 3. adds `/dev/gpt/homedirs` on `/home` and `/dev/gpt/apachedirs` on
    `/usr/local/www/apache24` to `/etc/fstab`, checks each file system, and
    mounts it; a missing label is logged, and no volume is ever formatted;
-4. creates the login account with its UID, a group of the same number, the
+4. creates the login account with its UID and a primary group with its GID, the
    home `/home/<name>`, the shell `/bin/sh`, no password, and no other
    group, unless the name or the number is taken; it creates the home
-   directory only when the volume has none and changes no existing file.
+   directory only when the volume has none and changes no existing file;
+5. creates `ec2-user` with the user and group IDs that own `/home/ec2-user`
+   on the home volume, in `wheel`, so `sshd` accepts the home it finds there;
+   when `ec2-user` already exists with other IDs, the home is handed to it
+   instead.
 
 Each step checks before it acts, so a second run changes nothing. The script
 logs to `/var/log/user_data.log`, ending with `user_data end <time>, <n>
@@ -200,8 +204,9 @@ No modules.
 | Name | Description | Type | Default | Required |
 | ---- | ----------- | ---- | ------- | :------: |
 | <a name="input_key_pair_name"></a> [key\_pair\_name](#input\_key\_pair\_name) | Name of the EC2 key pair the instance was launched with; supplied by op.env, never committed, because the name carries an account name. | `string` | n/a | yes |
+| <a name="input_login_account_gid"></a> [login\_account\_gid](#input\_login\_account\_gid) | Group ID (GID) of the login account's primary group, which already owns its home directory on the home volume; supplied by op.env, never committed. | `number` | n/a | yes |
 | <a name="input_login_account_name"></a> [login\_account\_name](#input\_login\_account\_name) | Name of the personal login account the first boot creates; supplied by op.env, never committed. | `string` | n/a | yes |
-| <a name="input_login_account_uid"></a> [login\_account\_uid](#input\_login\_account\_uid) | User ID (UID) of the login account, which already owns its home directory on the home volume; its group gets the same number. Supplied by op.env, never committed. | `number` | n/a | yes |
+| <a name="input_login_account_uid"></a> [login\_account\_uid](#input\_login\_account\_uid) | User ID (UID) of the login account, which already owns its home directory on the home volume; supplied by op.env, never committed. | `number` | n/a | yes |
 | <a name="input_region"></a> [region](#input\_region) | Region the host lives in; must match 20-platform. | `string` | `"us-east-1"` | no |
 | <a name="input_state_bucket_name"></a> [state\_bucket\_name](#input\_state\_bucket\_name) | Bucket that stores OpenTofu state, from 00-bootstrap; this stack reads 20-platform's outputs from it. | `string` | `"cybris-net-tf-bucket"` | no |
 

@@ -28,12 +28,23 @@ variable "login_account_name" {
 }
 
 variable "login_account_uid" {
-  description = "User ID (UID) of the login account, which already owns its home directory on the home volume; its group gets the same number. Supplied by op.env, never committed."
+  description = "User ID (UID) of the login account, which already owns its home directory on the home volume; supplied by op.env, never committed."
   type        = number
   sensitive   = true
 
   validation {
     condition     = floor(var.login_account_uid) == var.login_account_uid && var.login_account_uid >= 1000 && var.login_account_uid < 65534
     error_message = "The login account UID must be a whole number from 1000 to 65533."
+  }
+}
+
+variable "login_account_gid" {
+  description = "Group ID (GID) of the login account's primary group, which already owns its home directory on the home volume; supplied by op.env, never committed."
+  type        = number
+  sensitive   = true
+
+  validation {
+    condition     = floor(var.login_account_gid) == var.login_account_gid && var.login_account_gid >= 1000 && var.login_account_gid < 65534
+    error_message = "The login account GID must be a whole number from 1000 to 65533."
   }
 }

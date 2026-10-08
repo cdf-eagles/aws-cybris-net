@@ -11,6 +11,7 @@ resource "aws_instance" "this" {
   user_data = templatefile("${path.module}/user_data.sh", {
     login_account_name = var.login_account_name
     login_account_uid  = var.login_account_uid
+    login_account_gid  = var.login_account_gid
   })
   disable_api_termination              = false
   disable_api_stop                     = false
