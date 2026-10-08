@@ -15,6 +15,17 @@ outputs. First applied 2026-10-05 (5 imported, 0 added, 2 changed, 0
 destroyed; the host's uptime was unchanged); the `import` blocks were
 removed once the state held the adopted resources.
 
+## Alarm
+
+`aws_cloudwatch_metric_alarm.status_check_failed` watches the
+`StatusCheckFailed` metric of the instance, which covers both the system and
+the instance status check. It takes the maximum over 300 seconds and enters
+`ALARM` when one of the last two periods is at or above 1. The alarm and the
+recovery both go to the `account-alerts` Simple Notification Service (SNS)
+topic of `10-account`, whose Amazon Resource Name (ARN) this stack reads from
+that stack's state, so `10-account` must be applied before this stack on an
+account that has neither.
+
 ## What changes on adoption
 
 - The primary interface takes one Internet Protocol version 6 (IPv6) address
@@ -112,10 +123,12 @@ No modules.
 
 | Name | Type |
 | ---- | ---- |
+| [aws_cloudwatch_metric_alarm.status_check_failed](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudwatch_metric_alarm) | resource |
 | [aws_eip_association.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/eip_association) | resource |
 | [aws_instance.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/instance) | resource |
 | [aws_network_interface.primary](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/network_interface) | resource |
 | [aws_volume_attachment.data](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/volume_attachment) | resource |
+| [terraform_remote_state.account](https://registry.terraform.io/providers/hashicorp/terraform/latest/docs/data-sources/remote_state) | data source |
 | [terraform_remote_state.platform](https://registry.terraform.io/providers/hashicorp/terraform/latest/docs/data-sources/remote_state) | data source |
 
 ## Inputs
