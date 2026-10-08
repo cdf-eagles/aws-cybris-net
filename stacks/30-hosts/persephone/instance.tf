@@ -11,7 +11,7 @@ resource "aws_instance" "this" {
   vpc_security_group_ids               = [local.platform.instance_security_group_id]
   key_name                             = var.key_pair_name
   source_dest_check                    = true
-  disable_api_termination              = true
+  disable_api_termination              = false
   disable_api_stop                     = false
   ebs_optimized                        = false
   monitoring                           = false
@@ -57,8 +57,7 @@ resource "aws_instance" "this" {
   }
 
   tags = {
-    Name      = local.host_name
-    Protected = "true"
+    Name = local.host_name
   }
 
   lifecycle {
