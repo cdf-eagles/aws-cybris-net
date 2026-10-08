@@ -82,3 +82,37 @@ resource "aws_budgets_budget" "monthly" {
     ignore_changes = [time_period_start]
   }
 }
+
+resource "aws_ce_anomaly_monitor" "services" {
+  name              = "Default-Services-Monitor"
+  monitor_type      = "DIMENSIONAL"
+  monitor_dimension = "SERVICE"
+}
+
+resource "aws_ce_anomaly_subscription" "services" {
+  name             = "Default-Services-Subscription"
+  frequency        = "DAILY"
+  monitor_arn_list = [aws_ce_anomaly_monitor.services.arn]
+
+  subscriber {
+    type    = "EMAIL"
+    address = var.alert_email
+  }
+
+  threshold_expression {
+    or {
+      dimension {
+        key           = "ANOMALY_TOTAL_IMPACT_ABSOLUTE"
+        match_options = ["GREATER_THAN_OR_EQUAL"]
+        values        = ["5"]
+      }
+    }
+    or {
+      dimension {
+        key           = "ANOMALY_TOTAL_IMPACT_PERCENTAGE"
+        match_options = ["GREATER_THAN_OR_EQUAL"]
+        values        = ["20"]
+      }
+    }
+  }
+}

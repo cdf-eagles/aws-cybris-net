@@ -10,6 +10,7 @@ locals {
 
   host_name = "persephone.cybris.net"
   platform  = data.terraform_remote_state.platform.outputs
+  account   = data.terraform_remote_state.account.outputs
 
   # Device names as the instance sees them; the attachments are adopted with
   # these and the host's fstab depends on them.

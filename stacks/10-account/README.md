@@ -7,7 +7,8 @@ the role Data Lifecycle Manager (DLM) assumes for the snapshot policy in
 `20-platform`;
 CloudTrail; GuardDuty; Amazon Web Services (AWS) Config (adopted); IAM Access Analyzer; the Simple
 Notification Service (SNS) topic that budget and GuardDuty alerts publish to;
-the cost budget (adopted); the alternate contacts; the password policy
+the cost budget (adopted); the Cost Anomaly Detection monitor and its
+subscription (adopted); the alternate contacts; the password policy
 (adopted); and the Elastic Block Store (EBS) encryption defaults (adopted).
 
 Applied from a workstation with the administrator profile, never from
@@ -109,6 +110,19 @@ Every command runs from this directory with `AWS_PROFILE=cybris` exported and
    `cybris-default-ebs-encryption-key`, 30-day window); disable Security Hub
    once GuardDuty has produced its first findings.
 
+## Cost Anomaly Detection
+
+The monitor `Default-Services-Monitor` (a per-service dimensional monitor)
+and its daily email subscription were created by hand in 2023 and are
+adopted with `import` blocks in `imports.tf`, whose identifiers are the
+monitor and subscription Amazon Resource Names (ARNs) with the account ID
+read from `aws_caller_identity`. The subscription's threshold changes from
+an impact of at least $100 and at least 40 percent to at least $5 or at
+least 20 percent, so that an account that spends about $60 a month can be
+alerted. The expected plan is 2 to import, 0 to add, 2 to change (the
+subscription's threshold, and tags on both), **0 to destroy, 0 to replace**.
+Delete `imports.tf` in the commit that records the apply.
+
 ## Not managed here
 
 The 25 Config rules created by hand stay as they are; a conformance pack
@@ -142,6 +156,8 @@ No modules.
 | [aws_accessanalyzer_analyzer.account](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/accessanalyzer_analyzer) | resource |
 | [aws_account_alternate_contact.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/account_alternate_contact) | resource |
 | [aws_budgets_budget.monthly](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/budgets_budget) | resource |
+| [aws_ce_anomaly_monitor.services](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ce_anomaly_monitor) | resource |
+| [aws_ce_anomaly_subscription.services](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ce_anomaly_subscription) | resource |
 | [aws_cloudtrail.account](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudtrail) | resource |
 | [aws_cloudwatch_event_rule.guardduty_findings](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudwatch_event_rule) | resource |
 | [aws_cloudwatch_event_target.guardduty_findings](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudwatch_event_target) | resource |

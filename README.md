@@ -19,9 +19,9 @@ the less often it changes and the more it protects.
 | Stack | Holds | State | Applied with |
 |---|---|---|---|
 | `stacks/00-bootstrap` | the Simple Storage Service (S3) bucket that stores every stack's state, its own included | `aws-cybris-net/00-bootstrap.tfstate` | administrator |
-| `stacks/10-account` | identity (Identity and Access Management (IAM) Identity Center permission sets, OpenID Connect roles for GitHub Actions), CloudTrail, GuardDuty, Config, budgets, contacts | `aws-cybris-net/10-account.tfstate` | administrator |
+| `stacks/10-account` | identity (Identity and Access Management (IAM) Identity Center permission sets, OpenID Connect roles for GitHub Actions), CloudTrail, GuardDuty, Config, budgets, cost anomaly alerts, contacts | `aws-cybris-net/10-account.tfstate` | administrator |
 | `stacks/20-platform` | Virtual Private Cloud (VPC), subnets, security groups, Key Management Service (KMS) key, Elastic Internet Protocol (IP) address (EIP), data volumes, snapshot policy | `aws-cybris-net/20-platform.tfstate` | engineer |
-| `stacks/30-hosts/<name>` | one instance per directory, its volume attachments, and EIP association; the only stacks that are ever destroyed | `aws-cybris-net/30-hosts-<name>.tfstate` | engineer |
+| `stacks/30-hosts/<name>` | one instance per directory, its volume attachments, EIP association, and status-check alarm; the only stacks that are ever destroyed | `aws-cybris-net/30-hosts-<name>.tfstate` | engineer |
 | `modules/` | code shared by the stacks | -- | -- |
 
 Stacks read each other's **identifiers only** through `terraform_remote_state`

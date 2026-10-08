@@ -7,3 +7,13 @@ data "terraform_remote_state" "platform" {
     region = var.region
   }
 }
+
+data "terraform_remote_state" "account" {
+  backend = "s3"
+
+  config = {
+    bucket = var.state_bucket_name
+    key    = "aws-cybris-net/10-account.tfstate"
+    region = var.region
+  }
+}
