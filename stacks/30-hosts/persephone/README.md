@@ -3,10 +3,10 @@
 The host that serves public Domain Name System (DNS), Network Time Protocol
 (NTP), and web services: the instance and its root volume, the primary
 network interface, the two data-volume attachments, and the Elastic Internet
-Protocol (IP) address (EIP) association. Everything that existed is adopted
-with `import` blocks. The image, the user data, and the instance type are
-adopted as found and ignored by every plan until the rebuild window, which
-is the one change allowed to replace this instance.
+Protocol (IP) address (EIP) association. Everything that existed was adopted
+with `import` blocks. The image and the user data serve the first boot of an
+instance only and every plan ignores them, so the instance is replaced only
+by an explicit `tofu apply -replace=aws_instance.this` in a rebuild window.
 
 Applied from a workstation with the engineer profile. State:
 `aws-cybris-net/30-hosts-persephone.tfstate`. The network, security group,
@@ -45,8 +45,37 @@ account that has neither.
 
 ## Secrets and personal data
 
-`op.env` (ignored by git; copy `op.env.example`) supplies the key pair name
-through a 1Password reference, because the name carries an account name.
+`op.env` (ignored by git; copy `op.env.example`) supplies three values
+through 1Password references: the key pair name, because it carries an
+account name, and the name and user ID (UID) of the personal login account
+that the first boot creates. The three variables are sensitive and have no
+default; the Plan workflow reads the same values from repository secrets.
+
+## User data
+
+`user_data.sh` runs once, as root, at the first boot of a new instance; the
+image's `ec2_configinit` runs it before `ec2_fetchkey` creates `ec2-user`.
+`templatefile()` fills in the login account's name and UID. In order, it:
+
+1. installs `python3` and `sudo` and gives `ec2-user` a sudo rule without a
+   password, so Ansible can connect and become root;
+2. sets `canmount=off` on the image's empty `zroot/home` and unmounts it, so
+   it cannot hide the home volume;
+3. adds `/dev/gpt/homedirs` on `/home` and `/dev/gpt/apachedirs` on
+   `/usr/local/www/apache24` to `/etc/fstab`, checks each file system, and
+   mounts it; a missing label is logged, and no volume is ever formatted;
+4. creates the login account with its UID, a group of the same number, the
+   home `/home/<name>`, the shell `/bin/sh`, no password, and no other
+   group, unless the name or the number is taken; it creates the home
+   directory only when the volume has none and changes no existing file.
+
+Each step checks before it acts, so a second run changes nothing. The script
+logs to `/var/log/user_data.log`, ending with `user_data end <time>, <n>
+failure(s)`. Everything after the first boot is the `persephone.cybris.net`
+Ansible's job, the login account's password (`--tags user-config`), shell,
+and groups included. Because the image and the user data are in
+`ignore_changes`, editing either changes nothing until the next explicit
+replacement.
 
 ## First apply (done 2026-10-05; kept for a new account)
 
@@ -95,10 +124,45 @@ Every command runs from this directory with `op.env` in place; `tofu` is the
 
 ## The rebuild window
 
-Item 129's runbook, not this README. Only there: a new image, a new instance
-type, `user_data` reduced to mounting the volumes and bootstrapping Ansible,
-and `ignore_changes` removed. The data volumes and the EIP are reattached to
-the new instance, so DNS data and the public address do not change.
+A rebuild replaces the instance and its root volume and keeps everything
+else: the data volumes, the primary interface with its private and IPv6
+addresses, and the EIP association. It is applied from a workstation on the
+feature branch, because the Plan check refuses any replacement. The full
+procedure, with its captures and rollback, is kept in the internal runbook;
+in short:
+
+1. **Lift protection** (`disable_api_termination = false`, `Protected` off
+   the instance's own tags only), plan, and apply: 0 to add, 1 to change, 0
+   to destroy.
+2. **First rebuild only:** switch the primary interface's attachment to
+   delete-on-termination off, so terminating the old instance keeps the
+   interface; later instances are launched on it with the flag already off.
+
+   ```sh
+   aws ec2 modify-network-interface-attribute --network-interface-id <interface id> --attachment AttachmentId=<attachment id>,DeleteOnTermination=false
+   ```
+
+3. **Keep the state that lives only on the root volume** by copying it to
+   the home volume, then stop the services and the instance, so the data
+   volumes are detached from a stopped host.
+4. **Replace**, always with `-replace`: a plan without it never rebuilds,
+   and a changed `instance_type` alone would stop and resize the old
+   instance in place.
+
+   ```sh
+   tofu plan -replace=aws_instance.this -out tf.plan
+   tofu show tf.plan | grep -E "^Plan:|must be replaced|will be destroyed|will be updated|Error"
+   tofu apply tf.plan
+   ```
+
+   Expected: 3 to add, 1 to change, 3 to destroy. The instance and the two
+   volume attachments are replaced and the alarm's instance dimension is
+   updated; a plan that touches the interface, the EIP association, the
+   volumes, or the address is wrong.
+5. **Prove the host and run the Ansible**, then restore protection, plan,
+   and apply (0 to add, 1 to change, 0 to destroy). The next plan shows no
+   changes, and the pull request's Plan check passes because nothing is
+   replaced against state.
 
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
@@ -136,6 +200,8 @@ No modules.
 | Name | Description | Type | Default | Required |
 | ---- | ----------- | ---- | ------- | :------: |
 | <a name="input_key_pair_name"></a> [key\_pair\_name](#input\_key\_pair\_name) | Name of the EC2 key pair the instance was launched with; supplied by op.env, never committed, because the name carries an account name. | `string` | n/a | yes |
+| <a name="input_login_account_name"></a> [login\_account\_name](#input\_login\_account\_name) | Name of the personal login account the first boot creates; supplied by op.env, never committed. | `string` | n/a | yes |
+| <a name="input_login_account_uid"></a> [login\_account\_uid](#input\_login\_account\_uid) | User ID (UID) of the login account, which already owns its home directory on the home volume; its group gets the same number. Supplied by op.env, never committed. | `number` | n/a | yes |
 | <a name="input_region"></a> [region](#input\_region) | Region the host lives in; must match 20-platform. | `string` | `"us-east-1"` | no |
 | <a name="input_state_bucket_name"></a> [state\_bucket\_name](#input\_state\_bucket\_name) | Bucket that stores OpenTofu state, from 00-bootstrap; this stack reads 20-platform's outputs from it. | `string` | `"cybris-net-tf-bucket"` | no |
 
