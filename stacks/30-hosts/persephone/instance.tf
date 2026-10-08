@@ -6,7 +6,7 @@ resource "aws_instance" "this" {
   #checkov:skip=CKV_AWS_135:t3a instances are EBS-optimized by default, whatever the launch flag says
   #checkov:skip=CKV2_AWS_41:the host calls no AWS API, so it carries no instance profile
   ami           = "ami-00a1141286ec55116"
-  instance_type = "t3a.small"
+  instance_type = "t3a.medium"
   key_name      = var.key_pair_name
   user_data = templatefile("${path.module}/user_data.sh", {
     login_account_name = var.login_account_name
