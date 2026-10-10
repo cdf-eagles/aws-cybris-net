@@ -4,7 +4,8 @@ The account's identity, audit, and alerting baseline: Identity and Access
 Management (IAM) Identity Center groups, permission sets, and assignments;
 the OpenID Connect (OIDC) provider and the roles GitHub Actions assumes;
 the role Data Lifecycle Manager (DLM) assumes for the snapshot policy in
-`20-platform`;
+`20-platform`; the `ec2-persephone` instance role and profile (Systems Manager
+Session Manager only) that `30-hosts/persephone` attaches;
 CloudTrail; GuardDuty; Amazon Web Services (AWS) Config (adopted); IAM Access Analyzer; the Simple
 Notification Service (SNS) topic that budget and GuardDuty alerts publish to;
 the cost budget (adopted); the Cost Anomaly Detection monitor and its
@@ -173,14 +174,17 @@ No modules.
 | [aws_guardduty_detector_feature.us_east_2_disabled](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/guardduty_detector_feature) | resource |
 | [aws_guardduty_detector_feature.us_west_2_disabled](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/guardduty_detector_feature) | resource |
 | [aws_iam_account_password_policy.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_account_password_policy) | resource |
+| [aws_iam_instance_profile.ec2_persephone](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_instance_profile) | resource |
 | [aws_iam_openid_connect_provider.github](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_openid_connect_provider) | resource |
 | [aws_iam_policy.engineer_lead](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_policy) | resource |
 | [aws_iam_role.dlm](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role) | resource |
+| [aws_iam_role.ec2_persephone](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role) | resource |
 | [aws_iam_role.gha_aws_cybris_net_plan](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role) | resource |
 | [aws_iam_role.gha_freebsd_cloud_img_publish](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role) | resource |
 | [aws_iam_role_policy.gha_aws_cybris_net_plan_state](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy) | resource |
 | [aws_iam_role_policy.gha_freebsd_cloud_img_publish](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy) | resource |
 | [aws_iam_role_policy_attachment.dlm](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy_attachment) | resource |
+| [aws_iam_role_policy_attachment.ec2_persephone_ssm](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy_attachment) | resource |
 | [aws_iam_role_policy_attachment.gha_aws_cybris_net_plan_read_only](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy_attachment) | resource |
 | [aws_identitystore_group.administrators](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/identitystore_group) | resource |
 | [aws_identitystore_group.billing](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/identitystore_group) | resource |
@@ -216,6 +220,7 @@ No modules.
 | [aws_iam_policy_document.account_alerts](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 | [aws_iam_policy_document.config_bucket](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 | [aws_iam_policy_document.dlm_trust](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
+| [aws_iam_policy_document.ec2_trust](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 | [aws_iam_policy_document.engineer_lead](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 | [aws_iam_policy_document.freebsd_images_publish](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 | [aws_iam_policy_document.github_trust](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
@@ -256,4 +261,5 @@ No modules.
 | <a name="output_gha_freebsd_cloud_img_publish_role_arn"></a> [gha\_freebsd\_cloud\_img\_publish\_role\_arn](#output\_gha\_freebsd\_cloud\_img\_publish\_role\_arn) | Role the freebsd-cloud-img publish jobs assume through OIDC. |
 | <a name="output_logs_bucket_name"></a> [logs\_bucket\_name](#output\_logs\_bucket\_name) | Bucket that holds the CloudTrail logs. |
 | <a name="output_permission_set_arns"></a> [permission\_set\_arns](#output\_permission\_set\_arns) | Permission set ARNs by key, for the plan and apply workflows' documentation. |
+| <a name="output_persephone_instance_profile_name"></a> [persephone\_instance\_profile\_name](#output\_persephone\_instance\_profile\_name) | Instance profile for persephone (Systems Manager Session Manager only), attached by 30-hosts/persephone. |
 <!-- END_TF_DOCS -->

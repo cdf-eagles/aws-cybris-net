@@ -4,7 +4,6 @@
 resource "aws_instance" "this" {
   #checkov:skip=CKV_AWS_126:detailed monitoring costs more than one host's graphs are worth
   #checkov:skip=CKV_AWS_135:t3a instances are EBS-optimized by default, whatever the launch flag says
-  #checkov:skip=CKV2_AWS_41:the host calls no AWS API, so it carries no instance profile
   ami           = "ami-00a1141286ec55116"
   instance_type = "t3a.medium"
   key_name      = var.key_pair_name
@@ -13,6 +12,10 @@ resource "aws_instance" "this" {
     login_account_uid  = var.login_account_uid
     login_account_gid  = var.login_account_gid
   })
+
+  # Systems Manager Session Manager only; the role and profile are 10-account's.
+  iam_instance_profile = local.account.persephone_instance_profile_name
+
   disable_api_termination              = false
   disable_api_stop                     = false
   ebs_optimized                        = false

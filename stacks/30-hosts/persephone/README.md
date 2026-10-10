@@ -26,6 +26,12 @@ topic of `10-account`, whose Amazon Resource Name (ARN) this stack reads from
 that stack's state, so `10-account` must be applied before this stack on an
 account that has neither.
 
+The instance carries the `ec2-persephone` instance profile from `10-account`,
+whose role has only `AmazonSSMManagedInstanceCore`, so Systems Manager Session
+Manager can reach the host; the host calls no other Amazon Web Services (AWS)
+application programming interface (API). Attaching or changing the profile is
+an in-place change that neither stops nor replaces the instance.
+
 ## What changes on adoption
 
 - The primary interface takes one Internet Protocol version 6 (IPv6) address
