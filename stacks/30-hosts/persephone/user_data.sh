@@ -105,23 +105,27 @@ if mount -p | listed /dev/gpt/homedirs /home -; then
 			fail "create $home"
 		fi
 	fi
-	# ec2-user's home on the volume keeps the owner it had on the old host;
-	# sshd refuses a home owned by another user, so ec2-user takes that owner's
-	# IDs when it does not exist yet, or the home is handed to it otherwise.
+	# ec2-user has fixed IDs, 1000:1000: below the 1001 the image's own accounts
+	# start from (ssm-user is 1001) and never used by the ports tree. Its home
+	# on the volume is handed to it when another ID owns it.
 	ec2home=/home/ec2-user
-	if [ -d "$ec2home" ]; then
-		ec2uid=$(stat -f %u "$ec2home")
-		ec2gid=$(stat -f %g "$ec2home")
-		if ! pw usershow -n ec2-user >/dev/null 2>&1; then
-			if pw usershow -u "$ec2uid" >/dev/null 2>&1 || pw groupshow -g "$ec2gid" >/dev/null 2>&1; then
-				fail "uid $ec2uid or gid $ec2gid is taken; ec2-user not created"
-			elif pw groupadd -n ec2-user -g "$ec2gid" &&
-				pw useradd -n ec2-user -u "$ec2uid" -g ec2-user -G wheel -d "$ec2home" -s /bin/sh -w no; then
-				echo "ec2-user created with uid $ec2uid to match $ec2home"
-			else
-				fail "create ec2-user"
-			fi
-		elif [ "$(id -u ec2-user)" != "$ec2uid" ]; then
+	ec2id=1000
+	if ! pw usershow -n ec2-user >/dev/null 2>&1; then
+		if pw usershow -u "$ec2id" >/dev/null 2>&1 || pw groupshow -g "$ec2id" >/dev/null 2>&1; then
+			fail "uid or gid $ec2id is taken; ec2-user not created"
+		elif pw groupadd -n ec2-user -g "$ec2id" &&
+			pw useradd -n ec2-user -u "$ec2id" -g ec2-user -G wheel -d "$ec2home" -s /bin/sh -w no; then
+			echo "ec2-user created with uid $ec2id"
+		else
+			fail "create ec2-user"
+		fi
+	elif [ "$(id -u ec2-user)" != "$ec2id" ]; then
+		fail "ec2-user exists with uid $(id -u ec2-user), not $ec2id"
+	fi
+	if pw usershow -n ec2-user >/dev/null 2>&1; then
+		if [ ! -d "$ec2home" ]; then
+			install -d -m 0755 -o ec2-user -g ec2-user "$ec2home" || fail "create $ec2home"
+		elif [ "$(stat -f %u:%g "$ec2home")" != "$(id -u ec2-user):$(id -g ec2-user)" ]; then
 			if chown -R ec2-user:ec2-user "$ec2home"; then
 				echo "$ec2home handed to ec2-user (uid $(id -u ec2-user))"
 			else

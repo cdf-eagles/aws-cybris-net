@@ -33,8 +33,8 @@ variable "login_account_uid" {
   sensitive   = true
 
   validation {
-    condition     = floor(var.login_account_uid) == var.login_account_uid && var.login_account_uid >= 1000 && var.login_account_uid < 65534
-    error_message = "The login account UID must be a whole number from 1000 to 65533."
+    condition     = floor(var.login_account_uid) == var.login_account_uid && var.login_account_uid >= 500 && var.login_account_uid < 1000
+    error_message = "The login account UID must be a whole number from 500 to 999: below the 1000 kept for ec2-user and the 1001 upward that the image's own accounts take."
   }
 }
 
@@ -44,7 +44,7 @@ variable "login_account_gid" {
   sensitive   = true
 
   validation {
-    condition     = floor(var.login_account_gid) == var.login_account_gid && var.login_account_gid >= 1000 && var.login_account_gid < 65534
-    error_message = "The login account GID must be a whole number from 1000 to 65533."
+    condition     = floor(var.login_account_gid) == var.login_account_gid && var.login_account_gid >= 500 && var.login_account_gid < 1000
+    error_message = "The login account GID must be a whole number from 500 to 999: below the 1000 kept for ec2-user and the 1001 upward that the image's own accounts take."
   }
 }

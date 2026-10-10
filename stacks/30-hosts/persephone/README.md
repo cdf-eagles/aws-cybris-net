@@ -68,10 +68,14 @@ image's `ec2_configinit` runs it before `ec2_fetchkey` creates `ec2-user`.
    home `/home/<name>`, the shell `/bin/sh`, no password, and no other
    group, unless the name or the number is taken; it creates the home
    directory only when the volume has none and changes no existing file;
-5. creates `ec2-user` with the user and group IDs that own `/home/ec2-user`
-   on the home volume, in `wheel`, so `sshd` accepts the home it finds there;
-   when `ec2-user` already exists with other IDs, the home is handed to it
-   instead.
+5. creates `ec2-user` with the fixed IDs 1000:1000, in `wheel`, and hands
+   `/home/ec2-user` on the home volume to it when another ID owns it, so
+   `sshd` accepts the home; an existing `ec2-user` with other IDs is logged
+   as a failure.
+
+The login account's IDs must be from 500 to 999 and `ec2-user`'s are 1000:
+both stay below the 1001 upward that the image's own accounts take (its
+`ssm-user` is 1001), so no first boot finds them taken.
 
 Each step checks before it acts, so a second run changes nothing. The script
 logs to `/var/log/user_data.log`, ending with `user_data end <time>, <n>

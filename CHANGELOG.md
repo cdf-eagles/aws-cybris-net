@@ -1,5 +1,8 @@
 # Changelog
 
+- 2026-10-10
+  - `stacks/30-hosts/persephone` gives the first-boot accounts fixed IDs outside the range the image assigns: `ec2-user` is 1000:1000, and `login_account_uid` and `login_account_gid` must be from 500 to 999. The FreeBSD 15.1 image already holds 1001 for its `ssm-user`, so the first boot could not create the login account at 1001. An `ec2-user` that exists with other IDs is now a logged failure, and its home is handed to it when another ID owns it. Found internally from backlog item 129.
+
 - 2026-10-08
   - `stacks/30-hosts/persephone` lifts the instance's termination protection and removes `Protected = true` from the instance's own tags, the first of three steps of the host rebuild, because the guard rails deny terminating anything tagged `Protected = true` and the instance flag denies it to everyone. The root volume, the data volumes, the Elastic Internet Protocol (IP) address (EIP), the key, and the Virtual Private Cloud (VPC) keep their tags and `prevent_destroy`, and the expected plan is 0 to add, 1 to change, 0 to destroy. Found internally from backlog item 129.
   - `stacks/30-hosts/persephone` rebuilds the host on FreeBSD 15.1-RELEASE (`ami-00a1141286ec55116`, the base system on the Z File System (ZFS)) as a `t3a.medium`, with the root volume kept at 40 gibibytes (GiB). The expected plan with `-replace=aws_instance.this` is 3 to add, 1 to change, 3 to destroy: the instance and the two volume attachments replaced, and the status-check alarm's instance dimension updated.
