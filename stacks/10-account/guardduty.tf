@@ -103,3 +103,56 @@ resource "aws_cloudwatch_event_target" "guardduty_findings" {
     input_template = "\"GuardDuty <type> (severity <severity>) in <region>: <description>\""
   }
 }
+
+# RDS_LOGIN_EVENTS stays disabled in all three detectors, in resources of its
+# own: GuardDuty now returns an RDS_DATA_RISK sub-feature under it, which the
+# provider does not accept in additional_configuration, so the plan would
+# otherwise offer to remove it on every run. Only its sub-features are ignored.
+resource "aws_guardduty_detector_feature" "rds_login_disabled" {
+  detector_id = aws_guardduty_detector.this.id
+  name        = "RDS_LOGIN_EVENTS"
+  status      = "DISABLED"
+
+  lifecycle {
+    ignore_changes = [additional_configuration]
+  }
+}
+
+resource "aws_guardduty_detector_feature" "us_east_2_rds_login_disabled" {
+  provider = aws.us_east_2
+
+  detector_id = aws_guardduty_detector.us_east_2.id
+  name        = "RDS_LOGIN_EVENTS"
+  status      = "DISABLED"
+
+  lifecycle {
+    ignore_changes = [additional_configuration]
+  }
+}
+
+resource "aws_guardduty_detector_feature" "us_west_2_rds_login_disabled" {
+  provider = aws.us_west_2
+
+  detector_id = aws_guardduty_detector.us_west_2.id
+  name        = "RDS_LOGIN_EVENTS"
+  status      = "DISABLED"
+
+  lifecycle {
+    ignore_changes = [additional_configuration]
+  }
+}
+
+moved {
+  from = aws_guardduty_detector_feature.disabled["RDS_LOGIN_EVENTS"]
+  to   = aws_guardduty_detector_feature.rds_login_disabled
+}
+
+moved {
+  from = aws_guardduty_detector_feature.us_east_2_disabled["RDS_LOGIN_EVENTS"]
+  to   = aws_guardduty_detector_feature.us_east_2_rds_login_disabled
+}
+
+moved {
+  from = aws_guardduty_detector_feature.us_west_2_disabled["RDS_LOGIN_EVENTS"]
+  to   = aws_guardduty_detector_feature.us_west_2_rds_login_disabled
+}
