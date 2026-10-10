@@ -1,6 +1,7 @@
 # Changelog
 
 - 2026-10-10
+  - `stacks/30-hosts/persephone` restores the instance's termination protection and `Protected = true` on its own tags now that the rebuilt host is proven, the last of the three rebuild steps. The expected plan is 0 to add, 1 to change, 0 to destroy, and the plan after it shows no changes. Found internally from backlog item 129.
   - `stacks/10-account` adds the `ec2-persephone` instance role, with only `AmazonSSMManagedInstanceCore`, and its instance profile, and outputs the profile's name; the `ec2-` prefix lets EngineerLead and the CI apply role pass it without creating roles. `stacks/30-hosts/persephone` attaches the profile in place, so Systems Manager Session Manager can reach the host, decided 2026-10-10. `10-account` must be applied before `30-hosts/persephone` plans. Found internally from backlog item 129.
   - `stacks/30-hosts/persephone` gives the first-boot accounts fixed IDs outside the range the image assigns: `ec2-user` is 1000:1000, and `login_account_uid` and `login_account_gid` must be from 500 to 999. The FreeBSD 15.1 image already holds 1001 for its `ssm-user`, so the first boot could not create the login account at 1001. An `ec2-user` that exists with other IDs is now a logged failure, and its home is handed to it when another ID owns it. Found internally from backlog item 129.
 

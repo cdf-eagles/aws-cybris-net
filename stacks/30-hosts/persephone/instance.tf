@@ -16,7 +16,7 @@ resource "aws_instance" "this" {
   # Systems Manager Session Manager only; the role and profile are 10-account's.
   iam_instance_profile = local.account.persephone_instance_profile_name
 
-  disable_api_termination              = false
+  disable_api_termination              = true
   disable_api_stop                     = false
   ebs_optimized                        = false
   monitoring                           = false
@@ -66,7 +66,8 @@ resource "aws_instance" "this" {
   }
 
   tags = {
-    Name = local.host_name
+    Name      = local.host_name
+    Protected = "true"
   }
 
   lifecycle {
