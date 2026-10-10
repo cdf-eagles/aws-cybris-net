@@ -273,10 +273,11 @@ shapes GitHub issues, the original and the immutable one with owner and
 repository IDs (`10-account`, `github_repository_ids`); a new repository
 needs its ID added there before its first run.
 
-The Plan workflow needs two repository secrets, set once by hand:
+The Plan workflow needs five repository secrets, set once by hand:
 `AWS_PLAN_ROLE_ARN` (the `gha_aws_cybris_net_plan_role_arn` output of
-`10-account`; it carries the account ID, which is why it is a secret) and
-`TF_VAR_KEY_PAIR_NAME` (the value the host stack's `op.env` supplies). The
+`10-account`; it carries the account ID, which is why it is a secret), and
+`TF_VAR_KEY_PAIR_NAME`, `TF_VAR_LOGIN_ACCOUNT_NAME`,
+`TF_VAR_LOGIN_ACCOUNT_UID`, and `TF_VAR_LOGIN_ACCOUNT_GID` (the values the host stack's `op.env` supplies). The
 job exchanges its OpenID Connect token for a session with the runner's own
 AWS command line interface (CLI), so no third-party action handles
 credentials. Plans take no state lock; nothing in CI writes to the bucket.

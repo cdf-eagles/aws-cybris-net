@@ -32,3 +32,8 @@ output "dlm_role_arn" {
   description = "Role that Data Lifecycle Manager assumes for the snapshot policy in 20-platform."
   value       = aws_iam_role.dlm.arn
 }
+
+output "persephone_instance_profile_name" {
+  description = "Instance profile for persephone (Systems Manager Session Manager only), attached by 30-hosts/persephone."
+  value       = aws_iam_instance_profile.ec2_persephone.name
+}

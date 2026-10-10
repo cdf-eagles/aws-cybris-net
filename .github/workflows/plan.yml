@@ -72,6 +72,9 @@ jobs:
         working-directory: stacks/${{ matrix.stack }}
         env:
           TF_VAR_key_pair_name: ${{ secrets.TF_VAR_KEY_PAIR_NAME }}
+          TF_VAR_login_account_name: ${{ secrets.TF_VAR_LOGIN_ACCOUNT_NAME }}
+          TF_VAR_login_account_uid: ${{ secrets.TF_VAR_LOGIN_ACCOUNT_UID }}
+          TF_VAR_login_account_gid: ${{ secrets.TF_VAR_LOGIN_ACCOUNT_GID }}
         run: |
           set -u
           tofu init -input=false >/dev/null
