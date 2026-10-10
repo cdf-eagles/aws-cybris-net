@@ -24,7 +24,7 @@ resource "aws_vpc_security_group_ingress_rule" "ssh_ipv4" {
 
 resource "aws_vpc_security_group_ingress_rule" "public_ipv4" {
   #checkov:skip=CKV_AWS_260:the web server answers port 80 to redirect to 443 and to serve ACME challenges
-  for_each = local.public_services
+  for_each = local.public_ipv4_services
 
   security_group_id = aws_security_group.instance.id
   description       = each.value.description
@@ -36,7 +36,7 @@ resource "aws_vpc_security_group_ingress_rule" "public_ipv4" {
 
 resource "aws_vpc_security_group_ingress_rule" "public_ipv6" {
   #checkov:skip=CKV_AWS_260:the web server answers port 80 to redirect to 443 and to serve ACME challenges
-  for_each = local.public_services
+  for_each = local.public_ipv6_services
 
   security_group_id = aws_security_group.instance.id
   description       = each.value.description

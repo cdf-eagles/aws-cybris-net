@@ -25,15 +25,20 @@ locals {
   }
 
   # Services the host serves to the Internet, by port. Each entry becomes one
-  # IPv4 rule and one IPv6 rule.
-  public_services = {
+  # rule; the keys are the rule addresses in state.
+  public_ipv4_services = {
     tcp-dns   = { protocol = "tcp", port = 53, description = "DNS over TCP from anywhere" }
     udp-dns   = { protocol = "udp", port = 53, description = "DNS over UDP from anywhere" }
     tcp-http  = { protocol = "tcp", port = 80, description = "HTTP from anywhere" }
-    tcp-ntp   = { protocol = "tcp", port = 123, description = "NTP over TCP from anywhere" }
     udp-ntp   = { protocol = "udp", port = 123, description = "NTP over UDP from anywhere" }
     tcp-https = { protocol = "tcp", port = 443, description = "HTTPS from anywhere" }
     tcp-dot   = { protocol = "tcp", port = 853, description = "DNS over TLS from anywhere" }
+  }
+
+  public_ipv6_services = {
+    tcp-http  = { protocol = "tcp", port = 80, description = "HTTP from anywhere" }
+    udp-ntp   = { protocol = "udp", port = 123, description = "NTP over UDP from anywhere" }
+    tcp-https = { protocol = "tcp", port = 443, description = "HTTPS from anywhere" }
   }
 
   # Volumes that outlive the instance: imported, protected, and snapshotted.

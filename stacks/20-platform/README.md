@@ -3,12 +3,15 @@
 The network and the durable data every host depends on: the Virtual Private
 Cloud (VPC) with its six subnets, Internet gateway, and route tables, now
 dual-stack with an Amazon-provided Internet Protocol version 6 (IPv6) /56; the
-security group the hosts attach, one resource per rule, with an IPv6 twin for
-every public service; the Key Management Service (KMS) key that encrypts every
-volume; the Elastic Internet Protocol (IP) address (EIP) and its reverse
-record; the two data volumes; and the Data Lifecycle Manager (DLM) policy that
-snapshots them daily. Everything that existed is adopted with `import`
-blocks; nothing here is stopped, replaced, or deleted by an apply.
+security group the hosts attach, one resource per rule, with IPv6 rules only
+for the services the host answers on IPv6 (Hypertext Transfer Protocol (HTTP),
+HTTP Secure (HTTPS), and Network Time Protocol (NTP)); the Key Management
+Service (KMS) key that encrypts every volume; the Elastic Internet Protocol
+(IP) address (EIP) and its reverse record; the two data volumes; and the Data
+Lifecycle Manager (DLM) policy that snapshots them daily. Everything that
+existed is adopted with `import` blocks; nothing here is stopped, replaced, or
+deleted by an apply, except the five unused security-group rules removed on
+2026-10-10 (`CHANGELOG.md`).
 
 Applied from a workstation with the engineer profile. State:
 `aws-cybris-net/20-platform.tfstate`. The role DLM assumes comes from
