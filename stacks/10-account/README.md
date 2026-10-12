@@ -27,7 +27,7 @@ the `import` blocks were removed once the state held the adopted resources.
 | AdministratorAccess | administrators | AdministratorAccess | guard rails | 1 h |
 | EngineerLead | engineers | PowerUserAccess | `EngineerLead` customer-managed policy (role reads, `PassRole` on `ec2-*` and on the `dlm-snapshots` role, no state-version deletion, no Identity Center writes), guard rails | 8 h |
 | ReadOnly | read-only | ReadOnlyAccess | guard rails | 8 h |
-| BillingAccess | billing | job-function/Billing | guard rails | 4 h |
+| BillingAccess | billing | job-function/Billing | guard rails plus the Cost Anomaly Detection read, create, and update actions (no deletes) | 4 h |
 
 The guard rails are one inline policy on every set: allow the two `signin`
 actions the AWS MCP connector needs to open a session (nothing short of
@@ -126,6 +126,13 @@ least 20 percent, so that an account that spends about $60 a month can be
 alerted. The expected plan is 2 to import, 0 to add, 2 to change (the
 subscription's threshold, and tags on both), **0 to destroy, 0 to replace**.
 Delete `imports.tf` in the commit that records the apply.
+
+On a near-zero baseline that OR pair alerted daily on anomalies of a few
+cents, so since 2026-10-12 the threshold is at least $5 **and** at least 20
+percent. The `job-function/Billing` managed policy grants no Cost Anomaly
+Detection writes, so BillingAccess's inline policy is the guard rails plus
+the anomaly read, create, and update actions; deleting a monitor or a
+subscription stays with AdministratorAccess.
 
 ## Not managed here
 
@@ -228,6 +235,7 @@ No modules.
 | [aws_ssoadmin_permission_set_inline_policy.guardrails](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ssoadmin_permission_set_inline_policy) | resource |
 | [aws_caller_identity.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/caller_identity) | data source |
 | [aws_iam_policy_document.account_alerts](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
+| [aws_iam_policy_document.billing](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 | [aws_iam_policy_document.config_bucket](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 | [aws_iam_policy_document.dlm_trust](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 | [aws_iam_policy_document.ec2_persephone_session_logs](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |

@@ -1,5 +1,9 @@
 # Changelog
 
+- 2026-10-12
+  - `stacks/10-account` changes the cost anomaly subscription's threshold to an impact of at least $5 and at least 20 percent, matching the live setting changed by hand on 2026-10-12, because the OR pair alerted daily on anomalies of a few cents against a near-zero baseline. The expected plan shows no change to the subscription.
+  - The BillingAccess permission set's inline policy adds the Cost Anomaly Detection read, create, and update actions to the guard rails, because the `job-function/Billing` managed policy grants none of them; delete actions stay with AdministratorAccess, decided 2026-10-12. The expected plan is 0 to add, 1 to change, 0 to destroy. Found internally from backlog item 246.
+
 - 2026-10-10
   - `stacks/20-platform` removes the five public security-group rules for ports the host does not serve: Network Time Protocol (NTP) over Transmission Control Protocol (TCP) port 123 on Internet Protocol version 4 (IPv4) and version 6 (IPv6), and Domain Name System (DNS) on port 53 and DNS over Transport Layer Security (TLS) on port 853 on IPv6, where the name server does not listen. The expected plan is 0 to add, 0 to change, 5 to destroy, a one-time exception to the no-destroy rule decided 2026-10-10 and applied from a workstation before the pull request, so its Plan check shows no changes; the IPv4 DNS, DNS over TLS, and NTP over User Datagram Protocol (UDP) rules are unchanged. Found internally from backlog item 165.
   - `stacks/10-account` moves `RDS_LOGIN_EVENTS`, still disabled, into its own detector-feature resource per region (with `moved` blocks) that ignores its sub-features. GuardDuty now returns an `RDS_DATA_RISK` sub-feature under it that the provider will not accept as configuration, so every plan offered to remove it and every apply changed three resources without effect. Found internally from backlog item 129.
