@@ -83,6 +83,38 @@ data "aws_iam_policy_document" "guardrails" {
   }
 }
 
+# BillingAccess inline policy: the guard rails plus Cost Anomaly Detection.
+data "aws_iam_policy_document" "billing" {
+  source_policy_documents = [data.aws_iam_policy_document.guardrails.json]
+
+  statement {
+    sid    = "ManageCostAnomalyAlerts"
+    effect = "Allow"
+    actions = [
+      "ce:GetAnomalies",
+      "ce:GetAnomalyMonitors",
+      "ce:GetAnomalySubscriptions",
+      "ce:UpdateAnomalyMonitor",
+      "ce:UpdateAnomalySubscription",
+    ]
+    resources = [
+      "arn:${data.aws_partition.current.partition}:ce::${local.account_id}:anomalymonitor/*",
+      "arn:${data.aws_partition.current.partition}:ce::${local.account_id}:anomalysubscription/*",
+    ]
+  }
+
+  statement {
+    sid    = "CreateCostAnomalyAlerts"
+    effect = "Allow"
+    actions = [
+      "ce:CreateAnomalyMonitor",
+      "ce:CreateAnomalySubscription",
+      "ce:ProvideAnomalyFeedback",
+    ]
+    resources = ["*"]
+  }
+}
+
 # What EngineerLead has beyond PowerUserAccess, and what it must not do to the
 # state bucket. Shared with the CI apply role as a customer-managed policy.
 data "aws_iam_policy_document" "engineer_lead" {

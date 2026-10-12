@@ -80,6 +80,13 @@ locals {
     billing       = "arn:${data.aws_partition.current.partition}:iam::aws:policy/job-function/Billing"
   }
 
+  inline_policies = {
+    administrator = data.aws_iam_policy_document.guardrails.json
+    engineer_lead = data.aws_iam_policy_document.guardrails.json
+    read_only     = data.aws_iam_policy_document.guardrails.json
+    billing       = data.aws_iam_policy_document.billing.json
+  }
+
   group_ids = {
     administrator = aws_identitystore_group.administrators.group_id
     engineer_lead = aws_identitystore_group.engineers.group_id
@@ -111,7 +118,7 @@ resource "aws_ssoadmin_permission_set_inline_policy" "guardrails" {
 
   instance_arn       = local.sso_instance_arn
   permission_set_arn = each.value
-  inline_policy      = data.aws_iam_policy_document.guardrails.json
+  inline_policy      = local.inline_policies[each.key]
 }
 
 resource "aws_ssoadmin_account_assignment" "this" {

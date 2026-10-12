@@ -100,14 +100,14 @@ resource "aws_ce_anomaly_subscription" "services" {
   }
 
   threshold_expression {
-    or {
+    and {
       dimension {
         key           = "ANOMALY_TOTAL_IMPACT_ABSOLUTE"
         match_options = ["GREATER_THAN_OR_EQUAL"]
         values        = ["5"]
       }
     }
-    or {
+    and {
       dimension {
         key           = "ANOMALY_TOTAL_IMPACT_PERCENTAGE"
         match_options = ["GREATER_THAN_OR_EQUAL"]
