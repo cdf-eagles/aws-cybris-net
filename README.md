@@ -240,21 +240,33 @@ configuration, and needs no AWS credentials.
 
 ## Repository settings
 
-`scripts/configure-github.sh` applies the GitHub settings with the GitHub
-CLI, signed in as an owner, and is safe to run again; `--show` prints the
+`scripts/configure-github.sh` applies the standard GitHub settings to one of
+the account's public repositories with the GitHub command-line interface
+(CLI), signed in as an owner, and is safe to run again; `--show` prints the
 current state without changing it. It sets: squash as the only merge method
 with the branch deleted on merge; secret scanning with push protection;
 Dependabot alerts, security updates, and private vulnerability reporting;
-Actions limited to GitHub's own actions plus the two pinned third-party ones,
-with a read-only default token; and a ruleset on `main` that requires a pull
-request, the `validate` check, signed commits, and linear history, and
-forbids force-pushes and deletion. `.github/dependabot.yml` keeps the pinned
-actions and the provider constraints current with one grouped pull request a
-week, after a seven-day cooldown on new releases.
+Actions limited to GitHub's own actions plus the repository's pinned
+third-party ones, with a read-only default token; and a ruleset on `main`
+that requires a pull request, signed commits, and linear history, and forbids
+force-pushes and deletion.
+
+The per-repository values live in `scripts/github-settings/<repository>.conf`:
+
+| Setting | Meaning |
+|---|---|
+| `allowed_actions` | third-party actions allowed besides GitHub's own, space-separated |
+| `required_checks` | status checks the `main` ruleset requires, one per line; empty for none |
+| `bypass_deploy_keys` | `true` lets the repository's deploy keys bypass the `main` ruleset |
+
+This repository requires the `validate` check and both `plan` checks.
+`.github/dependabot.yml` keeps the pinned actions and the provider
+constraints current with one grouped pull request a week, after a seven-day
+cooldown on new releases.
 
 ```sh
-sh scripts/configure-github.sh --show
-sh scripts/configure-github.sh
+sh scripts/configure-github.sh aws-cybris-net --show
+sh scripts/configure-github.sh aws-cybris-net
 ```
 
 ## Continuous integration

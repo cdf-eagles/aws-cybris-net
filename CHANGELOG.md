@@ -1,5 +1,9 @@
 # Changelog
 
+- 2026-10-13
+  - `scripts/configure-github.sh` takes the repository name and reads its allowed third-party actions, required checks, and deploy-key bypass from `scripts/github-settings/<repository>.conf`, so the same settings apply to every public repository of the account. It locates itself without `cd`, carries over the rule types and bypass actors it does not manage when a `main` ruleset already exists, stops before any change unless the GitHub CLI is signed in with admin rights, and `--show` also prints each ruleset's rules and bypass actors, Dependabot security updates, and private vulnerability reporting. Found internally from backlog item 156.
+  - Only this repository's ruleset requires status checks, because every workflow in the other repositories is path-filtered on pull requests and a required check would never report on a change outside those paths. `grafana-alerting` lets its deploy keys bypass the ruleset, because its export job pushes unsigned commits straight to `main`.
+
 - 2026-10-12
   - `stacks/10-account` changes the cost anomaly subscription's threshold to an impact of at least $5 and at least 20 percent, matching the live setting changed by hand on 2026-10-12, because the OR pair alerted daily on anomalies of a few cents against a near-zero baseline. The expected plan shows no change to the subscription.
   - The BillingAccess permission set's inline policy adds the Cost Anomaly Detection read, create, and update actions to the guard rails, because the `job-function/Billing` managed policy grants none of them; delete actions stay with AdministratorAccess, decided 2026-10-12. The expected plan is 0 to add, 1 to change, 0 to destroy. Found internally from backlog item 246.
