@@ -1,6 +1,7 @@
 # Changelog
 
 - 2026-10-13
+  - `scripts/github-settings/.github.conf` brings the account's public `.github` repository, which holds the default security policy, under the same settings as the other public repositories; it has no workflows, so it allows no third-party actions and requires no checks. The usage message now lists settings files whose names start with a dot. Found internally from backlog item 257.
   - `scripts/configure-github.sh` takes the repository name and reads its allowed third-party actions, required checks, and deploy-key bypass from `scripts/github-settings/<repository>.conf`, so the same settings apply to every public repository of the account. It locates itself without `cd`, carries over the rule types and bypass actors it does not manage when a `main` ruleset already exists, stops before any change unless the GitHub CLI is signed in with admin rights, and `--show` also prints each ruleset's rules and bypass actors, Dependabot security updates, and private vulnerability reporting. Found internally from backlog item 156.
   - Only this repository's ruleset requires status checks, because every workflow in the other repositories is path-filtered on pull requests and a required check would never report on a change outside those paths. `grafana-alerting` lets its deploy keys bypass the ruleset, because its export job pushes unsigned commits straight to `main`.
 

@@ -21,7 +21,9 @@ if [ -z "$name" ] || [ ! -f "$conf" ]; then
   echo "usage: sh scripts/configure-github.sh <repository> [--show]" >&2
   printf 'repositories:' >&2
   set +f
-  for f in "$here"/github-settings/*.conf; do printf ' %s' "$(basename "$f" .conf)" >&2; done
+  for f in "$here"/github-settings/*.conf "$here"/github-settings/.*.conf; do
+    if [ -f "$f" ]; then printf ' %s' "$(basename "$f" .conf)" >&2; fi
+  done
   echo >&2
   exit 2
 fi
