@@ -1,5 +1,5 @@
 #!/bin/sh
-# Applies the standard GitHub settings to one public repository with the
+# Applies the standard GitHub settings to one of the account's repositories with the
 # GitHub CLI (gh), signed in as an owner. Safe to run again: every call sets
 # state rather than adding it. Per-repository values (allowed third-party
 # actions, required checks, deploy-key bypass, release flow) are read from
@@ -48,6 +48,7 @@ if [ "$admin" != "true" ]; then
   echo "gh is signed in without admin rights on $repo" >&2
   exit 1
 fi
+visibility=$(gh api "repos/$repo" --jq '.visibility')
 
 # Prints words as a JSON array of strings.
 json_array() {
@@ -91,17 +92,26 @@ gh api -X PATCH "repos/$repo" \
   -f squash_merge_commit_message=COMMIT_MESSAGES >/dev/null
 echo "repository: merge methods and features set"
 
-# Secret scanning with push protection (free on a public repository).
-gh api -X PATCH "repos/$repo" --input - >/dev/null <<'JSON'
+# Secret scanning with push protection (free on a public repository only).
+if [ "$visibility" = "public" ]; then
+  gh api -X PATCH "repos/$repo" --input - >/dev/null <<'JSON'
 {"security_and_analysis":{"secret_scanning":{"status":"enabled"},"secret_scanning_push_protection":{"status":"enabled"}}}
 JSON
-echo "repository: secret scanning and push protection enabled"
+  echo "repository: secret scanning and push protection enabled"
+else
+  echo "repository: secret scanning skipped ($visibility repository)"
+fi
 
-# Dependabot alerts, Dependabot security updates, private vulnerability reporting.
+# Dependabot alerts and security updates; private vulnerability reporting
+# exists only for public repositories.
 gh api -X PUT "repos/$repo/vulnerability-alerts" >/dev/null
 gh api -X PUT "repos/$repo/automated-security-fixes" >/dev/null
-gh api -X PUT "repos/$repo/private-vulnerability-reporting" >/dev/null
-echo "repository: Dependabot alerts, security updates, and private vulnerability reporting enabled"
+if [ "$visibility" = "public" ]; then
+  gh api -X PUT "repos/$repo/private-vulnerability-reporting" >/dev/null
+  echo "repository: Dependabot alerts, security updates, and private vulnerability reporting enabled"
+else
+  echo "repository: Dependabot alerts and security updates enabled; private vulnerability reporting skipped ($visibility repository)"
+fi
 
 # Actions: only GitHub's own actions and the repository's listed third-party
 # ones; the default token is read-only and cannot approve pull requests.

@@ -1,5 +1,9 @@
 # Changelog
 
+- 2026-10-17
+  - `scripts/configure-github.sh` also configures the account's private repositories: it reads the repository's visibility and skips secret scanning with push protection and private vulnerability reporting when it is not public, because the first needs a paid add-on on a private repository and the second exists only for public ones.
+  - `scripts/github-settings/openbao-config.conf` adds the private `openbao-config` repository, which allows the OpenTofu and tflint setup actions and requires its `validate` check. Found internally from backlog item 45.
+
 - 2026-10-13
   - `scripts/github-settings/.github.conf` brings the account's public `.github` repository, which holds the default security policy, under the same settings as the other public repositories; it has no workflows, so it allows no third-party actions and requires no checks. The usage message now lists settings files whose names start with a dot. Found internally from backlog item 257.
   - `scripts/configure-github.sh` takes the repository name and reads its allowed third-party actions, required checks, and deploy-key bypass from `scripts/github-settings/<repository>.conf`, so the same settings apply to every public repository of the account. It locates itself without `cd`, carries over the rule types and bypass actors it does not manage when a `main` ruleset already exists, stops before any change unless the GitHub CLI is signed in with admin rights, and `--show` also prints each ruleset's rules and bypass actors, Dependabot security updates, and private vulnerability reporting. Found internally from backlog item 156.

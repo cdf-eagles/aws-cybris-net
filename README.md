@@ -241,11 +241,13 @@ configuration, and needs no AWS credentials.
 ## Repository settings
 
 `scripts/configure-github.sh` applies the standard GitHub settings to one of
-the account's public repositories with the GitHub command-line interface
-(CLI), signed in as an owner, and is safe to run again; `--show` prints the
-current state without changing it. It sets: squash as the only merge method
-with the branch deleted on merge; secret scanning with push protection;
-Dependabot alerts, security updates, and private vulnerability reporting;
+the account's repositories with the GitHub command-line interface (CLI),
+signed in as an owner, and is safe to run again; `--show` prints the current
+state without changing it. It sets: squash as the only merge method with the
+branch deleted on merge; secret scanning with push protection (public
+repositories only, because private ones need a paid add-on); Dependabot
+alerts and security updates; private vulnerability reporting (public
+repositories only, because GitHub offers it for nothing else);
 Actions limited to GitHub's own actions plus the repository's pinned
 third-party ones, with a read-only default token; and a ruleset on `main`
 that requires a pull request, signed commits, and linear history, and forbids
