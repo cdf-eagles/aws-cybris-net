@@ -40,7 +40,11 @@ jobs:
             tofu -chdir="$d" init -backend=false -input=false >/dev/null
             tofu -chdir="$d" validate
           done
+      # The token lifts GitHub's unauthenticated API rate limit for the ruleset
+      # plugin download in tflint --init; it is the job's read-only token.
       - name: tflint
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           tflint --init --config "$PWD/.tflint.hcl"
           tflint --recursive --config "$PWD/.tflint.hcl"
