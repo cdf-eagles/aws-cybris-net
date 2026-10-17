@@ -1,7 +1,7 @@
 # Changelog
 
 - 2026-10-17
-  - `scripts/configure-github.sh` also configures the account's private repositories: it reads the repository's visibility and skips secret scanning with push protection and private vulnerability reporting when it is not public, because the first needs a paid add-on on a private repository and the second exists only for public ones.
+  - `scripts/configure-github.sh` also configures the account's private repositories: it reads the repository's visibility and skips secret scanning with push protection and private vulnerability reporting when it is not public, because the first needs a paid add-on on a private repository and the second exists only for public ones. `--show` reports private vulnerability reporting as not offered on such a repository instead of printing GitHub's 404 response.
   - `scripts/github-settings/openbao-config.conf` adds the private `openbao-config` repository, which allows the OpenTofu and tflint setup actions and requires its `validate` check. Found internally from backlog item 45.
 
 - 2026-10-13

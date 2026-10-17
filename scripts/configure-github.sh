@@ -71,7 +71,11 @@ show() {
   gh api "repos/$repo/actions/permissions/selected-actions" 2>/dev/null || echo "selected actions: not set"
   gh api "repos/$repo/vulnerability-alerts" >/dev/null 2>&1 && echo "dependabot alerts: enabled" || echo "dependabot alerts: disabled"
   gh api "repos/$repo/automated-security-fixes" --jq '"dependabot security updates: \(.enabled)"' 2>/dev/null || echo "dependabot security updates: unknown"
-  gh api "repos/$repo/private-vulnerability-reporting" --jq '"private vulnerability reporting: \(.enabled)"' 2>/dev/null || echo "private vulnerability reporting: unknown"
+  if [ "$visibility" = "public" ]; then
+    gh api "repos/$repo/private-vulnerability-reporting" --jq '"private vulnerability reporting: \(.enabled)"' 2>/dev/null || echo "private vulnerability reporting: unknown"
+  else
+    echo "private vulnerability reporting: not offered ($visibility repository)"
+  fi
 }
 
 if [ "$mode" = "--show" ]; then
