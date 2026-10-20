@@ -1,6 +1,7 @@
 # Changelog
 
 - 2026-10-20
+  - `scripts/github-settings/dotfiles.conf` brings the account's private `dotfiles` repository under the same settings as the others: squash merges only with the branch deleted on merge, and the `main` ruleset requires its `CI` check, which runs on every pull request and every push to `main` with no path filter. It allows no third-party actions, because its workflow uses only GitHub's own checkout action. Found internally from backlog item 338.
   - `scripts/github-settings/mcp-allowlist-proxy.conf` adds the public `mcp-allowlist-proxy` repository: squash merges only with the branch deleted on merge, and the `main` ruleset requires its four CI jobs (`Lint`, `Secret scan`, `Test and build`, `Server allowlists`), which run on every pull request without a path filter; the golangci-lint action is its only third-party action. Found internally from backlog item 138.
 
 - 2026-10-17
