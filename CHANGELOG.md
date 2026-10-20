@@ -1,5 +1,8 @@
 # Changelog
 
+- 2026-10-20
+  - `scripts/github-settings/mcp-allowlist-proxy.conf` adds the public `mcp-allowlist-proxy` repository: squash merges only with the branch deleted on merge, and the `main` ruleset requires its four CI jobs (`Lint`, `Secret scan`, `Test and build`, `Server allowlists`), which run on every pull request without a path filter; the golangci-lint action is its only third-party action. Found internally from backlog item 138.
+
 - 2026-10-17
   - `scripts/configure-github.sh` also configures the account's private repositories: it reads the repository's visibility and skips secret scanning with push protection and private vulnerability reporting when it is not public, because the first needs a paid add-on on a private repository and the second exists only for public ones. `--show` reports private vulnerability reporting as not offered on such a repository instead of printing GitHub's 404 response.
   - The validate workflow passes the job's read-only token to `tflint --init`, because the unauthenticated GitHub API rate limit failed the plugin download on a shared runner.
