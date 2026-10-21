@@ -118,18 +118,19 @@ else
 fi
 
 # Actions: only GitHub's own actions and the repository's listed third-party
-# ones; the default token is read-only and cannot approve pull requests.
+# ones, each pinned to a full commit hash; the default token is read-only and
+# cannot approve pull requests.
 # shellcheck disable=SC2086
 patterns=$(json_array $allowed_actions)
 gh api -X PUT "repos/$repo/actions/permissions" --input - >/dev/null <<'JSON'
-{"enabled":true,"allowed_actions":"selected"}
+{"enabled":true,"allowed_actions":"selected","sha_pinning_required":true}
 JSON
 printf '{"github_owned_allowed":true,"verified_allowed":false,"patterns_allowed":%s}' "$patterns" |
   gh api -X PUT "repos/$repo/actions/permissions/selected-actions" --input - >/dev/null
 gh api -X PUT "repos/$repo/actions/permissions/workflow" --input - >/dev/null <<'JSON'
 {"default_workflow_permissions":"read","can_approve_pull_request_reviews":false}
 JSON
-echo "actions: allowed actions limited to GitHub's own plus $patterns, default token read-only"
+echo "actions: allowed actions limited to GitHub's own plus $patterns, full commit hash required, default token read-only"
 
 # Prints a required_status_checks rule (with a leading comma) for the
 # newline-separated check names given, or nothing when there are none.

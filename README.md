@@ -248,8 +248,9 @@ branch deleted on merge; secret scanning with push protection (public
 repositories only, because private ones need a paid add-on); Dependabot
 alerts and security updates; private vulnerability reporting (public
 repositories only, because GitHub offers it for nothing else);
-Actions limited to GitHub's own actions plus the repository's pinned
-third-party ones, with a read-only default token; and a ruleset on `main`
+Actions limited to GitHub's own actions plus the repository's listed
+third-party ones, every action required to be pinned to a full commit hash
+(SHA, secure hash algorithm), with a read-only default token; and a ruleset on `main`
 that requires a pull request, signed commits, and linear history, and forbids
 force-pushes and deletion.
 
