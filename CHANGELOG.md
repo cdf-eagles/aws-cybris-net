@@ -1,5 +1,10 @@
 # Changelog
 
+- 2026-10-21
+  - `scripts/github-settings` gains a settings file for each of the account's remaining active repositories that had none: `ansible-common`, `chris.cybris.net`, `claude-vault-history`, `haides.cybris.net`, `persephone.cybris.net`, `soundwave.sleem.net`, `tailscale-acl`, `vmbhyve` and `www.cybris.net`. Each gets squash merges only with the branch deleted on merge, which six of them lacked, and a `main` ruleset, so `configure-github.sh` can apply and verify them like the others. Found internally from backlog item 347.
+  - `persephone.cybris.net` and `soundwave.sleem.net` require their `CI` check and allow no third-party actions. `tailscale-acl` requires only its `lint` check, because its `acls` check needs secrets that Dependabot pull requests do not receive, and allows the Tailscale GitOps action. The other six have no workflow, so they require no check.
+  - `claude-vault-history` lets its deploy key bypass the ruleset, because a scheduled job pushes snapshots straight to `main`.
+
 - 2026-10-20
   - `scripts/github-settings/dotfiles.conf` brings the account's private `dotfiles` repository under the same settings as the others: squash merges only with the branch deleted on merge, and the `main` ruleset requires its `CI` check, which runs on every pull request and every push to `main` with no path filter. It allows no third-party actions, because its workflow uses only GitHub's own checkout action. Found internally from backlog item 338.
   - `scripts/github-settings/mcp-allowlist-proxy.conf` adds the public `mcp-allowlist-proxy` repository: squash merges only with the branch deleted on merge, and the `main` ruleset requires its four CI jobs (`Lint`, `Secret scan`, `Test and build`, `Server allowlists`), which run on every pull request without a path filter; the golangci-lint action is its only third-party action. Found internally from backlog item 138.
