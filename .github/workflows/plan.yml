@@ -28,7 +28,7 @@ env:
 jobs:
   plan:
     name: plan (${{ matrix.stack }})
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     strategy:
       fail-fast: false
@@ -39,14 +39,39 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-depth: 0
           persist-credentials: false
+      # Skips the steps below for a Dependabot change confined to .github/ and ci/;
+      # fails any other Dependabot change.
+      - name: Dependabot gate
+        id: gate
+        env:
+          ACTOR: ${{ github.actor }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          if [ "${ACTOR}" != "dependabot[bot]" ]; then
+            echo "skip=false" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+          files=$(git diff --name-only "${BASE_SHA}...${HEAD_SHA}")
+          test -n "${files}"
+          if printf '%s\n' "${files}" | grep -qEv '^(\.github|ci)/'; then
+            echo "::error::Dependabot gets no OpenID Connect token, so this plan cannot run; check the change out on a branch of your own"
+            exit 1
+          fi
+          echo "::notice::Dependabot change confined to .github/ and ci/; no plan needed"
+          echo "skip=true" >> "${GITHUB_OUTPUT}"
       - uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2.0.2
+        if: steps.gate.outputs.skip != 'true'
         with:
           tofu_version: 1.13.1
           tofu_wrapper: false
       # The runner's own AWS command line exchanges the job's OpenID Connect
       # token for a session; no third-party action is needed for that.
       - name: Assume the plan role
+        if: steps.gate.outputs.skip != 'true'
         env:
           ROLE_ARN: ${{ secrets.AWS_PLAN_ROLE_ARN }}
         run: |
@@ -69,6 +94,7 @@ jobs:
           } >> "$GITHUB_ENV"
           aws sts get-caller-identity --query Arn --output text | sed 's/[0-9]\{12\}/<account id>/'
       - name: Plan
+        if: steps.gate.outputs.skip != 'true'
         working-directory: stacks/${{ matrix.stack }}
         env:
           TF_VAR_key_pair_name: ${{ secrets.TF_VAR_KEY_PAIR_NAME }}
@@ -92,6 +118,7 @@ jobs:
       # The repository's first rule, enforced by the check: nothing running
       # is destroyed or replaced by an apply.
       - name: Refuse a destroy or a replace
+        if: steps.gate.outputs.skip != 'true'
         working-directory: stacks/${{ matrix.stack }}
         run: |
           set -eu

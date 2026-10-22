@@ -13,9 +13,19 @@ updates:
         patterns: ["*"]
     commit-message:
       prefix: "ci"
+  - package-ecosystem: pip
+    directory: /ci
+    schedule:
+      interval: weekly
+      day: monday
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: "deps"
   - package-ecosystem: terraform
     directories:
       - "/stacks/*"
+      - "/stacks/30-hosts/*"
     schedule:
       interval: weekly
       day: monday

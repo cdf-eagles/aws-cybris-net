@@ -234,9 +234,19 @@ blocks deleted in the commit that records the apply.
 
 ## Checks
 
-`pre-commit run --all-files` runs everything the Validate workflow runs. The
-workflow runs only on pull requests that change OpenTofu code or the check
-configuration, and needs no AWS credentials.
+`pre-commit run --all-files` runs the formatting, validation, lint, security,
+secret, documentation, and workflow checks before a commit. The Validate
+workflow runs those same checks, and also scans the full history for secrets
+with gitleaks. It runs on every pull request and every push to `main`, with no
+path filter, and weekly, and needs no AWS credentials. Its tools are pinned:
+OpenTofu and tflint by the workflow, Checkov and pre-commit by
+`ci/requirements.txt`, and gitleaks and terraform-docs by version and checksum.
+
+The Plan workflow runs on every pull request, reaches the account through an
+OpenID Connect (OIDC) role that trusts only pull requests, and applies nothing.
+Dependabot pull requests get no OIDC token: Plan skips a Dependabot change that
+touches only `.github/` and `ci/`, and fails any other, which is then checked out on a
+branch of the account's own.
 
 ## Repository settings
 
