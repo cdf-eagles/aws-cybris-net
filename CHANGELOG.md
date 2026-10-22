@@ -1,6 +1,7 @@
 # Changelog
 
 - 2026-10-22
+  - `zpool-status-exporter` requires its `Secret scan` check on `develop` beside `Lint` and `Test and build`, and no longer allows `ibiqlik/action-yamllint`, which its workflows stopped using when `Lint` installed a pinned yamllint.
   - `freebsd-cloud-img` requires its `CI` check on `main`. Its lint checks were path-filtered workflows that no ruleset required, so a pull request that changed other files merged with no check run; the single unfiltered `CI` job that replaces them can be required because every pull request runs it.
   - `freebsd-cloud-img` no longer allows `ibiqlik/action-yamllint`, `ludeeus/action-shellcheck` and `raven-actions/actionlint`, which its workflows stopped using when `CI` installed pinned copies of those tools.
 - 2026-10-21
