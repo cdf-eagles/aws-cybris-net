@@ -1,0 +1,2 @@
+checkov==3.3.30
+pre-commit==4.7.0

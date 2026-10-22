@@ -1,12 +1,14 @@
 ---
 name: Validate
 
-# Formatting, validation, and static checks only; needs no AWS credentials. The
-# plan and apply workflows are separate and use the OpenID Connect roles.
-# It runs on every pull request, with no path filter, because the main ruleset
-# requires it: a required check that can be skipped blocks the merge instead.
+# Formatting, validation, and static checks only; needs no AWS credentials.
+# No path filter: a required check that can be skipped blocks the merge.
 on:
   pull_request:
+  push:
+    branches: ["main"]
+  schedule:
+    - cron: "23 6 * * 1"
   workflow_dispatch:
 
 permissions:
@@ -16,13 +18,21 @@ concurrency:
   group: validate-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  GITLEAKS_VERSION: 8.21.2
+  GITLEAKS_SHA256: 5bc41815076e6ed6ef8fbecc9d9b75bcae31f39029ceb55da08086315316e3ba
+  TERRAFORM_DOCS_VERSION: 0.22.0
+  TERRAFORM_DOCS_SHA256: 8ec66616777c66f3e622af4f2853e8ae399f38908ad4b262c9c526dd42501369
+
 jobs:
   validate:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
     steps:
+      # fetch-depth: 0 -- gitleaks scans the full history.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-depth: 0
           persist-credentials: false
       - uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2.0.2
         with:
@@ -30,12 +40,44 @@ jobs:
       - uses: terraform-linters/setup-tflint@6ffdbaa3be476b3431f7275c26966ef32ff60337 # v6.3.2
         with:
           tflint_version: v0.64.0
+
+      - name: Install tools and assert preconditions
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse --is-shallow-repository)" = false
+          python3 -m venv "${RUNNER_TEMP}/venv"
+          "${RUNNER_TEMP}/venv/bin/pip" install --quiet --require-virtualenv -r ci/requirements.txt
+          echo "${RUNNER_TEMP}/venv/bin" >> "${GITHUB_PATH}"
+          mkdir -p "${RUNNER_TEMP}/bin"
+          echo "${RUNNER_TEMP}/bin" >> "${GITHUB_PATH}"
+          fetch() {
+            curl -sSfL -o "${RUNNER_TEMP}/${1}.tgz" "https://github.com/${2}"
+            echo "${3}  ${RUNNER_TEMP}/${1}.tgz" | sha256sum -c -
+            tar -xzf "${RUNNER_TEMP}/${1}.tgz" -C "${RUNNER_TEMP}/bin" "${1}"
+          }
+          fetch gitleaks "gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" "${GITLEAKS_SHA256}"
+          fetch terraform-docs "terraform-docs/terraform-docs/releases/download/v${TERRAFORM_DOCS_VERSION}/terraform-docs-v${TERRAFORM_DOCS_VERSION}-linux-amd64.tar.gz" "${TERRAFORM_DOCS_SHA256}"
+          "${RUNNER_TEMP}/bin/gitleaks" version
+          "${RUNNER_TEMP}/bin/terraform-docs" --version
+          "${RUNNER_TEMP}/venv/bin/checkov" --version
+          "${RUNNER_TEMP}/venv/bin/pre-commit" --version
+          shellcheck --version
+
+      # No path filter: a secret can land in any file.
+      - name: gitleaks (full history)
+        if: ${{ !cancelled() }}
+        run: gitleaks git --no-banner --redact --verbose .
+
       - name: Format
+        if: ${{ !cancelled() }}
         run: tofu fmt -check -recursive -diff
       - name: Validate every stack
+        if: ${{ !cancelled() }}
         run: |
           set -eu
-          for d in stacks/*/; do
+          stacks=$(find stacks -name versions.tf -exec dirname {} \; | sort)
+          test -n "$stacks"
+          for d in $stacks; do
             echo "== $d"
             tofu -chdir="$d" init -backend=false -input=false >/dev/null
             tofu -chdir="$d" validate
@@ -43,12 +85,19 @@ jobs:
       # The token lifts GitHub's unauthenticated API rate limit for the ruleset
       # plugin download in tflint --init; it is the job's read-only token.
       - name: tflint
+        if: ${{ !cancelled() }}
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
           tflint --init --config "$PWD/.tflint.hcl"
           tflint --recursive --config "$PWD/.tflint.hcl"
       - name: Checkov
-        run: |
-          pip install --quiet checkov
-          checkov --config-file .checkov.yml
+        if: ${{ !cancelled() }}
+        run: checkov --config-file .checkov.yml
+
+      # The hooks of .pre-commit-config.yaml not run above.
+      - name: pre-commit
+        if: ${{ !cancelled() }}
+        env:
+          SKIP: tofu_fmt,tofu_validate,tofu_tflint,tofu_checkov
+        run: pre-commit run --all-files --show-diff-on-failure
