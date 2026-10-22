@@ -1,5 +1,8 @@
 # Changelog
 
+- 2026-10-22
+  - `freebsd-cloud-img` requires its `CI` check on `main`. Its lint checks were path-filtered workflows that no ruleset required, so a pull request that changed other files merged with no check run; the single unfiltered `CI` job that replaces them can be required because every pull request runs it.
+  - `freebsd-cloud-img` no longer allows `ibiqlik/action-yamllint`, `ludeeus/action-shellcheck` and `raven-actions/actionlint`, which its workflows stopped using when `CI` installed pinned copies of those tools.
 - 2026-10-21
   - The Validate workflow now runs every check the pre-commit hooks run, each once: gitleaks over the full history, and the private-key, Amazon Web Services (AWS) credential, ripsecrets, merge-conflict, YAML, shellcheck, actionlint, terraform-docs, and whitespace hooks, besides formatting, validation, tflint, and Checkov. It also runs on every push to `main` and weekly, because Checkov and tflint rule updates change its result without a commit. Its tools are pinned (Checkov and pre-commit in `ci/requirements.txt`, gitleaks and terraform-docs by version and checksum) and both workflows run on `ubuntu-24.04` instead of the floating `ubuntu-latest`. Found internally from backlog item 349.
   - The Validate workflow validated no stack under `stacks/30-hosts`, because its loop covered `stacks/*/` and `30-hosts` holds no OpenTofu files itself; it now validates every directory that has a `versions.tf`. The Dependabot terraform entry gains `/stacks/30-hosts/*` for the same reason, and a pip entry for `ci/`.
