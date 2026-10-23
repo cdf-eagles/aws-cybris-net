@@ -271,17 +271,12 @@ The per-repository values live in `scripts/github-settings/<repository>.conf`:
 | `allowed_actions` | third-party actions allowed besides GitHub's own, space-separated |
 | `required_checks` | status checks the `main` ruleset requires, one per line; empty for none |
 | `bypass_deploy_keys` | `true` lets the repository's deploy keys bypass the `main` ruleset |
-| `release_flow` | `true` for a repository that releases from `develop` by signed tags: see below |
-| `develop_required_checks` | status checks the `develop` ruleset requires when `release_flow` is `true`, one per line |
+| `release_tags` | `true` for a repository that releases by signed `v*` tags: see below |
 
-With `release_flow="true"` (zpool-status-exporter), `main` takes no pull
-requests: its ruleset restricts updates to the repository administrator role,
-which fast-forwards `main` to a proven release candidate, and still requires
-signed commits and linear history and forbids force-pushes and deletion. A
-`develop` ruleset takes squash-merged pull requests with
-`develop_required_checks`. Release tags `v*` may be created only by the
-administrator role (`release-tags-create`) and can never be moved or deleted
-by anyone (`release-tags-immutable`), so a published release cannot change.
+With `release_tags="true"` (zpool-status-exporter), release tags `v*` may be
+created only by the administrator role (`release-tags-create`) and can never
+be moved or deleted by anyone (`release-tags-immutable`), so a published
+release cannot change.
 
 This repository requires the `validate` check and both `plan` checks.
 `.github/dependabot.yml` keeps the pinned actions and the provider

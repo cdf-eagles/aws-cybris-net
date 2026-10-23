@@ -1,5 +1,7 @@
 # Changelog
 
+- 2026-10-23
+  - `zpool-status-exporter` drops its `develop` branch: `main` takes squash-merged pull requests with `Lint`, `Test and build`, and `Secret scan` required, like the other repositories. The `release_flow` and `develop_required_checks` settings are replaced by `release_tags`, which keeps only the two rulesets that protect `v*` tags. Found internally from backlog item 376.
 - 2026-10-22
   - `zpool-status-exporter` requires its `Secret scan` check on `develop` beside `Lint` and `Test and build`, and no longer allows `ibiqlik/action-yamllint`, which its workflows stopped using when `Lint` installed a pinned yamllint.
   - `freebsd-cloud-img` requires its `CI` check on `main`. Its lint checks were path-filtered workflows that no ruleset required, so a pull request that changed other files merged with no check run; the single unfiltered `CI` job that replaces them can be required because every pull request runs it.

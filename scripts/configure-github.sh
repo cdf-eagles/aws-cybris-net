@@ -2,7 +2,7 @@
 # Applies the standard GitHub settings to one of the account's repositories with the
 # GitHub CLI (gh), signed in as an owner. Safe to run again: every call sets
 # state rather than adding it. Per-repository values (allowed third-party
-# actions, required checks, deploy-key bypass, release flow) are read from
+# actions, required checks, deploy-key bypass, release tags) are read from
 # scripts/github-settings/<repository>.conf.
 #
 #   sh scripts/configure-github.sh aws-cybris-net            # apply
@@ -32,8 +32,7 @@ case "$mode" in apply|--show) ;; *) echo "unknown option: $mode" >&2; exit 2 ;; 
 allowed_actions=""
 required_checks=""
 bypass_deploy_keys="false"
-release_flow="false"
-develop_required_checks=""
+release_tags="false"
 # shellcheck source=/dev/null
 . "$conf"
 repo="$owner/$name"
@@ -163,12 +162,10 @@ put_ruleset() {
 admin_bypass='{"actor_id":5,"actor_type":"RepositoryRole","bypass_mode":"always"}'
 
 # Ruleset on the default branch: signed commits, linear history, no
-# force-push, no deletion, and either a pull request (squash) with the listed
-# checks, or, for a release-flow repository, updates restricted to
-# administrators, who fast-forward main to a proven release candidate.
+# force-push, no deletion, and a pull request (squash) with the listed checks.
 # Rule types this script does not manage, and bypass actors other than deploy
-# keys (and, in a release flow, the administrator role it adds), are carried
-# over from an existing "main" ruleset.
+# keys and the administrator role, are carried over from an existing "main"
+# ruleset.
 existing=$(gh api "repos/$repo/rulesets" --jq '.[] | select(.name == "main") | .id')
 keep_rules=""
 keep_bypass=""
@@ -182,19 +179,14 @@ if [ "$bypass_deploy_keys" = "true" ]; then
   bypass="$bypass${bypass:+,}{\"actor_id\":null,\"actor_type\":\"DeployKey\",\"bypass_mode\":\"always\"}"
 fi
 checks_rule=$(checks_json "$required_checks")
-if [ "$release_flow" = "true" ]; then
-  bypass="$bypass${bypass:+,}$admin_bypass"
-  entry_rule='{"type": "update", "parameters": {"update_allows_fetch_and_merge": false}}'
-else
-  entry_rule='{"type": "pull_request", "parameters": {
-      "required_approving_review_count": 0,
-      "dismiss_stale_reviews_on_push": true,
-      "require_code_owner_review": false,
-      "require_last_push_approval": false,
-      "required_review_thread_resolution": true,
-      "allowed_merge_methods": ["squash"]
-    }}'
-fi
+entry_rule='{"type": "pull_request", "parameters": {
+    "required_approving_review_count": 0,
+    "dismiss_stale_reviews_on_push": true,
+    "require_code_owner_review": false,
+    "require_last_push_approval": false,
+    "required_review_thread_resolution": true,
+    "allowed_merge_methods": ["squash"]
+  }}'
 extra_rules=""
 if [ -n "$keep_rules" ]; then
   extra_rules=",$keep_rules"
@@ -218,50 +210,9 @@ JSON
 )
 put_ruleset main "$existing" "$ruleset"
 
-if [ "$release_flow" = "true" ]; then
-  # Release flow: develop takes squash-merged pull requests with the listed
-  # checks; release tags v* are created by administrators only and can never
-  # be moved or deleted. Rule types and bypass actors this script does not
-  # manage are carried over from an existing "develop" ruleset.
-  dev_id=$(gh api "repos/$repo/rulesets" --jq '.[] | select(.name == "develop") | .id')
-  dev_keep=""
-  dev_bypass=""
-  if [ -n "$dev_id" ]; then
-    # shellcheck disable=SC2016
-    dev_keep=$(gh api "repos/$repo/rulesets/$dev_id" --jq '[.rules[] | select(.type | IN("deletion","non_fast_forward","required_linear_history","required_signatures","pull_request","required_status_checks") | not) | {type} + (if .parameters then {parameters} else {} end) | tojson] | join(",")')
-    dev_bypass=$(gh api "repos/$repo/rulesets/$dev_id" --jq '[.bypass_actors[] | {actor_id, actor_type, bypass_mode} | tojson] | join(",")')
-  fi
-  dev_checks=$(checks_json "$develop_required_checks")
-  dev_extra=""
-  if [ -n "$dev_keep" ]; then
-    dev_extra=",$dev_keep"
-  fi
-  develop_rs=$(cat <<JSON
-{
-  "name": "develop",
-  "target": "branch",
-  "enforcement": "active",
-  "bypass_actors": [$dev_bypass],
-  "conditions": {"ref_name": {"include": ["refs/heads/develop"], "exclude": []}},
-  "rules": [
-    {"type": "deletion"},
-    {"type": "non_fast_forward"},
-    {"type": "required_linear_history"},
-    {"type": "required_signatures"},
-    {"type": "pull_request", "parameters": {
-      "required_approving_review_count": 0,
-      "dismiss_stale_reviews_on_push": true,
-      "require_code_owner_review": false,
-      "require_last_push_approval": false,
-      "required_review_thread_resolution": true,
-      "allowed_merge_methods": ["squash"]
-    }}$dev_checks$dev_extra
-  ]
-}
-JSON
-)
-  put_ruleset develop "$dev_id" "$develop_rs"
-
+if [ "$release_tags" = "true" ]; then
+  # Release tags v* are created by administrators only and can never be moved
+  # or deleted.
   create_id=$(gh api "repos/$repo/rulesets" --jq '.[] | select(.name == "release-tags-create") | .id')
   create_rs=$(cat <<JSON
 {
