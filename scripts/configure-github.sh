@@ -185,6 +185,7 @@ entry_rule='{"type": "pull_request", "parameters": {
     "require_code_owner_review": false,
     "require_last_push_approval": false,
     "required_review_thread_resolution": true,
+    "require_extra_approval_for_unattributed_changes": false,
     "allowed_merge_methods": ["squash"]
   }}'
 extra_rules=""
