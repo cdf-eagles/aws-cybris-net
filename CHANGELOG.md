@@ -1,6 +1,7 @@
 # Changelog
 
 - 2026-10-23
+  - `configure-github.sh` removes legacy branch protection from the default branch, and `--show` reports whether any is present. A leftover rule on `freebsd-cloud-img` required one approving review beside its ruleset, which a one-person account cannot give, and the rules endpoints never showed it. Found internally from backlog item 357.
   - The `main` ruleset's pull request rule sends `require_extra_approval_for_unattributed_changes` as `false`: GitHub turns it on whenever an update omits it, and it then asks for an approval that a one-person account cannot give, which blocked a `freebsd-cloud-img` pull request whose checks had all passed.
   - `py-findbig` no longer allows `dciborow/action-pylint` and `tj-actions/changed-files`, which its new continuous integration (CI) workflow does not use. Found internally from backlog items 357 and 353.
   - `py-findbig` requires its new `Lint` and `Secret scan` checks; it required none, so nothing blocked a merge. Found internally from backlog item 353.

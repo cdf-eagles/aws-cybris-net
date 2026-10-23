@@ -260,7 +260,7 @@ branch of the account's own.
 the account's repositories with the GitHub command-line interface (CLI),
 signed in as an owner, and is safe to run again; `--show` prints the current
 state without changing it. It sets: squash as the only merge method with the
-branch deleted on merge; secret scanning with push protection (public
+branch deleted on merge; no legacy branch protection on the default branch (the ruleset replaces it, and a leftover rule applies unseen beside it); secret scanning with push protection (public
 repositories only, because private ones need a paid add-on); Dependabot
 alerts and security updates; private vulnerability reporting (public
 repositories only, because GitHub offers it for nothing else);
