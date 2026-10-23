@@ -2,12 +2,17 @@
 name: Plan
 
 # A read-only plan of every stack CI is allowed to touch, on every pull
-# request, through the OpenID Connect role that holds ReadOnlyAccess and
-# state read. Nothing is applied from CI yet: applies run from a workstation
-# until the rebuild (item 129) is done. The workflow runs on every pull
-# request, with no path filter, because the main ruleset requires its checks.
+# request, every push of main, and weekly, through the OpenID Connect role that
+# holds ReadOnlyAccess and state read. Nothing is applied from CI yet: applies
+# run from a workstation until the rebuild (item 129) is done. No path filter,
+# because the main ruleset requires its checks. A manual run works from main
+# only; the role refuses any other branch.
 on:
   pull_request:
+  push:
+    branches: ["main"]
+  schedule:
+    - cron: "47 6 * * 1"
   workflow_dispatch:
 
 permissions:
@@ -15,10 +20,10 @@ permissions:
   contents: read
 
 # Plans take no state lock (-lock=false), so a cancelled run leaves nothing
-# behind in the bucket.
+# behind in the bucket. Only a pull request's runs cancel each other.
 concurrency:
-  group: plan-${{ github.ref }}
-  cancel-in-progress: true
+  group: plan-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   AWS_REGION: us-east-1
@@ -42,17 +47,18 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      # Skips the steps below for a Dependabot change confined to .github/ and ci/;
-      # fails any other Dependabot change.
+      # Skips the steps below for a Dependabot pull request confined to .github/
+      # and ci/; fails any other Dependabot pull request.
       - name: Dependabot gate
         id: gate
         env:
+          EVENT: ${{ github.event_name }}
           ACTOR: ${{ github.actor }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           set -euo pipefail
-          if [ "${ACTOR}" != "dependabot[bot]" ]; then
+          if [ "${EVENT}" != "pull_request" ] || [ "${ACTOR}" != "dependabot[bot]" ]; then
             echo "skip=false" >> "${GITHUB_OUTPUT}"
             exit 0
           fi
@@ -95,19 +101,25 @@ jobs:
           } >> "$GITHUB_ENV"
           aws sts get-caller-identity --query Arn --output text | sed 's/[0-9]\{12\}/<account id>/'
       - name: Plan
+        id: plan
         if: steps.gate.outputs.skip != 'true'
         working-directory: stacks/${{ matrix.stack }}
         env:
+          STACK: ${{ matrix.stack }}
           TF_VAR_key_pair_name: ${{ secrets.TF_VAR_KEY_PAIR_NAME }}
           TF_VAR_login_account_name: ${{ secrets.TF_VAR_LOGIN_ACCOUNT_NAME }}
           TF_VAR_login_account_uid: ${{ secrets.TF_VAR_LOGIN_ACCOUNT_UID }}
           TF_VAR_login_account_gid: ${{ secrets.TF_VAR_LOGIN_ACCOUNT_GID }}
         run: |
           set -u
-          tofu init -input=false >/dev/null
           set +e
-          tofu plan -input=false -lock=false -no-color -detailed-exitcode -out=tf.plan 2>&1 | tee plan.txt
-          rc=${PIPESTATUS[0]}
+          if tofu init -input=false >/dev/null; then
+            tofu plan -input=false -lock=false -no-color -detailed-exitcode -out=tf.plan 2>&1 | tee plan.txt
+            rc=${PIPESTATUS[0]}
+          else
+            rc=1
+            : > plan.txt
+          fi
           set -e
           {
             echo "## plan (${{ matrix.stack }})"
@@ -115,6 +127,28 @@ jobs:
             grep -E '^(Plan:|No changes)' plan.txt || echo "(no summary line; see the job log)"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+          # The drift report: the stack, its result, the summary line, and the
+          # address of every resource the plan would change; no values.
+          slug=${STACK//\//-}
+          echo "slug=${slug}" >> "$GITHUB_OUTPUT"
+          mkdir -p "${RUNNER_TEMP}/drift"
+          report="${RUNNER_TEMP}/drift/${slug}.txt"
+          case "$rc" in
+            0) result=clean ;;
+            2) result=changes ;;
+            *) result=error ;;
+          esac
+          {
+            echo "${STACK}"
+            echo "${result}"
+            grep -E '^(Plan:|Changes to Outputs:)' plan.txt || true
+            if [ "$rc" -eq 2 ]; then
+              tofu show -json tf.plan | jq -r '
+                .resource_changes[]?
+                | select(.change.actions != ["no-op"] and .change.actions != ["read"])
+                | "\(.change.actions | join("/")) \(.address)"'
+            fi
+          } > "$report"
           [ "$rc" -ne 1 ]
       # The repository's first rule, enforced by the check: nothing running
       # is destroyed or replaced by an apply.
@@ -131,3 +165,71 @@ jobs:
             exit 1
           fi
           echo "no destroy, no replace"
+      - name: Keep the drift report
+        if: ${{ !cancelled() && github.event_name == 'schedule' && steps.plan.outputs.slug != '' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: drift-${{ steps.plan.outputs.slug }}
+          path: ${{ runner.temp }}/drift/${{ steps.plan.outputs.slug }}.txt
+          if-no-files-found: error
+          retention-days: 7
+
+  # Weekly only: one open issue per stack while its plan shows changes, updated
+  # each week and closed by the first clean plan. A failed plan leaves the issue
+  # alone; the red run is the report.
+  drift:
+    name: Drift report
+    if: ${{ !cancelled() && github.event_name == 'schedule' }}
+    needs: plan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: drift-*
+          path: drift
+          merge-multiple: true
+      - name: Open, update, or close each stack's drift issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          reports=(drift/*.txt)
+          if [ "${#reports[@]}" -eq 0 ]; then
+            echo "::error::no drift report arrived from the plan jobs"
+            exit 1
+          fi
+          for report in "${reports[@]}"; do
+            stack=$(sed -n '1p' "$report")
+            result=$(sed -n '2p' "$report")
+            title="AWS drift: ${stack}"
+            open=$(gh issue list --state open --limit 100 --json number,title \
+              --jq "first(.[] | select(.title == \"${title}\") | .number) // empty")
+            case "$result" in
+              changes)
+                body=$(printf 'The weekly plan of the %s stack would change the account. Apply from a workstation, or change the code to match, until it plans clean.\n\n%s\n\n%s\n' \
+                  "$stack" "$(tail -n +3 "$report" | sed 's/^/    /')" "$RUN_URL")
+                if [ -n "$open" ]; then
+                  gh issue edit "$open" --body "$body"
+                  gh issue comment "$open" --body "Still drifted: ${RUN_URL}"
+                else
+                  gh issue create --title "$title" --body "$body"
+                fi
+                echo "::warning::${stack} has drifted; see the issue \"${title}\""
+                ;;
+              clean)
+                if [ -n "$open" ]; then
+                  gh issue close "$open" --comment "Planned clean: ${RUN_URL}"
+                fi
+                ;;
+              *)
+                echo "${stack}: the plan failed; its job log is the report"
+                ;;
+            esac
+          done

@@ -248,8 +248,12 @@ OpenTofu and tflint as `TOFU_VERSION` and `TFLINT_VERSION`, in the workflows'
 behind its latest release. `pre-commit install` also installs a push hook that
 runs gitleaks over the commits being pushed.
 
-The Plan workflow runs on every pull request, reaches the account through an
-OpenID Connect (OIDC) role that trusts only pull requests, and applies nothing.
+The Plan workflow runs on every pull request, every push to `main`, and weekly,
+reaches the account through an OpenID Connect (OIDC) role that trusts pull
+requests and `main` only (so a manual run works from `main` only), and applies
+nothing. The weekly run keeps one open
+issue per stack, titled `AWS drift: <stack>`, while that stack's plan shows
+changes, and closes it at the first clean plan.
 Dependabot pull requests get no OIDC token: Plan skips a Dependabot change that
 touches only `.github/` and `ci/`, and fails any other, which is then checked out on a
 branch of the account's own.
@@ -302,7 +306,7 @@ clean from a workstation.
 | Workflow | Trigger | Role | Does |
 |---|---|---|---|
 | Validate | every pull request | none | format, validate, tflint, Checkov |
-| Plan | every pull request | `gha-aws-cybris-net-plan` (ReadOnlyAccess plus state read) | `tofu plan` of `20-platform` and `30-hosts/persephone`, summary line in the job summary; **fails if the plan would destroy or replace anything** |
+| Plan | every pull request, every push to `main`, weekly | `gha-aws-cybris-net-plan` (ReadOnlyAccess plus state read; trusts pull requests and `main`) | `tofu plan` of `20-platform` and `30-hosts/persephone`, summary line in the job summary; **fails if the plan would destroy or replace anything**; weekly, opens, updates, or closes each stack's `AWS drift` issue |
 | Apply | not yet | `gha-aws-cybris-net-apply` (the EngineerLead policy) | decided 2026-10-05: applies stay on a workstation until the rebuild of the host is done; the workflow and its role follow afterwards |
 
 The trust policies of the OIDC roles name each repository by both subject

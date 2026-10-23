@@ -4,9 +4,10 @@ resource "aws_iam_openid_connect_provider" "github" {
 }
 
 data "aws_iam_policy_document" "github_trust" {
+  # The plan role also trusts main, for Plan's runs on a push of main and weekly.
   for_each = {
-    freebsd_cloud_img_publish = { repository = "freebsd-cloud-img", claim = "ref:refs/heads/main" }
-    aws_cybris_net_plan       = { repository = "aws-cybris-net", claim = "pull_request" }
+    freebsd_cloud_img_publish = { repository = "freebsd-cloud-img", claims = ["ref:refs/heads/main"] }
+    aws_cybris_net_plan       = { repository = "aws-cybris-net", claims = ["pull_request", "ref:refs/heads/main"] }
   }
 
   statement {
@@ -31,10 +32,10 @@ data "aws_iam_policy_document" "github_trust" {
     condition {
       test     = "StringEquals"
       variable = "${local.github_oidc_issuer}:sub"
-      values = [
-        "repo:${var.github_owner}/${each.value.repository}:${each.value.claim}",
-        "repo:${var.github_owner}@${var.github_owner_id}/${each.value.repository}@${var.github_repository_ids[each.value.repository]}:${each.value.claim}",
-      ]
+      values = flatten([for claim in each.value.claims : [
+        "repo:${var.github_owner}/${each.value.repository}:${claim}",
+        "repo:${var.github_owner}@${var.github_owner_id}/${each.value.repository}@${var.github_repository_ids[each.value.repository]}:${claim}",
+      ]])
     }
   }
 }
@@ -72,10 +73,11 @@ resource "aws_iam_role_policy" "gha_freebsd_cloud_img_publish" {
   policy = data.aws_iam_policy_document.freebsd_images_publish.json
 }
 
-# aws-cybris-net plans pull requests: read everything, hold the state lock.
+# aws-cybris-net plans pull requests, every push of main, and weekly: read
+# everything, hold the state lock.
 resource "aws_iam_role" "gha_aws_cybris_net_plan" {
   name                 = "gha-aws-cybris-net-plan"
-  description          = "GitHub Actions in aws-cybris-net, pull requests only: tofu plan."
+  description          = "GitHub Actions in aws-cybris-net, pull requests and the main branch: tofu plan."
   assume_role_policy   = data.aws_iam_policy_document.github_trust["aws_cybris_net_plan"].json
   max_session_duration = 3600
 }
