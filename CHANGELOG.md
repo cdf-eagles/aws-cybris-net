@@ -1,6 +1,8 @@
 # Changelog
 
 - 2026-10-23
+  - The `main` ruleset's pull request rule sends `require_extra_approval_for_unattributed_changes` as `false`: GitHub turns it on whenever an update omits it, and it then asks for an approval that a one-person account cannot give, which blocked a `freebsd-cloud-img` pull request whose checks had all passed.
+  - `py-findbig` no longer allows `dciborow/action-pylint` and `tj-actions/changed-files`, which its new continuous integration (CI) workflow does not use. Found internally from backlog items 357 and 353.
   - `py-findbig` requires its new `Lint` and `Secret scan` checks; it required none, so nothing blocked a merge. Found internally from backlog item 353.
   - Every repository allows the account's reusable Tool drift workflow (`cdf-eagles/.github/.github/workflows/tool-drift.yaml`), which each repository's weekly CI run calls to report release binaries pinned behind their latest release. `.github` requires its new `Lint` and `Secret scan` checks. Found internally from backlog items 357 and 341.
   - The Validate workflow's gitleaks step scans the history of the checked-out commit (`--log-opts="HEAD"`), so a secret on another branch no longer fails every run; a pre-commit push hook runs gitleaks over the commits being pushed.
