@@ -48,6 +48,7 @@ if [ "$admin" != "true" ]; then
   exit 1
 fi
 visibility=$(gh api "repos/$repo" --jq '.visibility')
+default_branch=$(gh api "repos/$repo" --jq '.default_branch')
 
 # Prints words as a JSON array of strings.
 json_array() {
@@ -65,6 +66,11 @@ show() {
   for id in $(gh api "repos/$repo/rulesets" --jq '.[].id'); do
     gh api "repos/$repo/rulesets/$id" --jq '{name, bypass_actors, rules: [.rules[] | .type], required_checks: [.rules[] | select(.type == "required_status_checks") | .parameters.required_status_checks[].context]}'
   done
+  if gh api "repos/$repo/branches/$default_branch/protection" >/dev/null 2>&1; then
+    echo "legacy branch protection on $default_branch: PRESENT"
+  else
+    echo "legacy branch protection on $default_branch: none"
+  fi
   gh api "repos/$repo/actions/permissions"
   gh api "repos/$repo/actions/permissions/workflow"
   gh api "repos/$repo/actions/permissions/selected-actions" 2>/dev/null || echo "selected actions: not set"
@@ -210,6 +216,13 @@ ruleset=$(cat <<JSON
 JSON
 )
 put_ruleset main "$existing" "$ruleset"
+
+# Legacy branch protection applies beside the ruleset and is invisible to the
+# rules endpoints, so a leftover rule can demand a review the ruleset does not.
+if gh api "repos/$repo/branches/$default_branch/protection" >/dev/null 2>&1; then
+  gh api -X DELETE "repos/$repo/branches/$default_branch/protection" >/dev/null
+  echo "legacy branch protection on $default_branch: removed"
+fi
 
 if [ "$release_tags" = "true" ]; then
   # Release tags v* are created by administrators only and can never be moved
