@@ -1,7 +1,10 @@
 # Changelog
 
 - 2026-10-23
+  - `py-findbig` requires its new `Lint` and `Secret scan` checks; it required none, so nothing blocked a merge. Found internally from backlog item 353.
   - Every repository allows the account's reusable Tool drift workflow (`cdf-eagles/.github/.github/workflows/tool-drift.yaml`), which each repository's weekly CI run calls to report release binaries pinned behind their latest release. `.github` requires its new `Lint` and `Secret scan` checks. Found internally from backlog items 357 and 341.
+  - The Validate workflow's gitleaks step scans the history of the checked-out commit (`--log-opts="HEAD"`), so a secret on another branch no longer fails every run; a pre-commit push hook runs gitleaks over the commits being pushed.
+  - Tool versions live where an updater reads them: shellcheck joins `ci/requirements.txt`, Dependabot also updates the pre-commit hooks, and OpenTofu and tflint move into the workflows' `env` as `TOFU_VERSION` and `TFLINT_VERSION`, which the weekly Tool drift job checks with gitleaks and terraform-docs. Found internally from backlog items 357, 361, and 380.
   - `zpool-status-exporter` drops its `develop` branch: `main` takes squash-merged pull requests with `Lint`, `Test and build`, and `Secret scan` required, like the other repositories. The `release_flow` and `develop_required_checks` settings are replaced by `release_tags`, which keeps only the two rulesets that protect `v*` tags. Found internally from backlog item 376.
 - 2026-10-22
   - `zpool-status-exporter` requires its `Secret scan` check on `develop` beside `Lint` and `Test and build`, and no longer allows `ibiqlik/action-yamllint`, which its workflows stopped using when `Lint` installed a pinned yamllint.

@@ -23,23 +23,25 @@ env:
   GITLEAKS_SHA256: 5bc41815076e6ed6ef8fbecc9d9b75bcae31f39029ceb55da08086315316e3ba
   TERRAFORM_DOCS_VERSION: 0.22.0
   TERRAFORM_DOCS_SHA256: 8ec66616777c66f3e622af4f2853e8ae399f38908ad4b262c9c526dd42501369
+  TOFU_VERSION: 1.13.1
+  TFLINT_VERSION: v0.64.0
 
 jobs:
   validate:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      # fetch-depth: 0 -- gitleaks scans the full history.
+      # fetch-depth: 0 -- gitleaks scans the checked-out commit's full history.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
       - uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2.0.2
         with:
-          tofu_version: 1.13.1
+          tofu_version: ${{ env.TOFU_VERSION }}
       - uses: terraform-linters/setup-tflint@6ffdbaa3be476b3431f7275c26966ef32ff60337 # v6.3.2
         with:
-          tflint_version: v0.64.0
+          tflint_version: ${{ env.TFLINT_VERSION }}
 
       - name: Install tools and assert preconditions
         run: |
@@ -64,9 +66,9 @@ jobs:
           shellcheck --version
 
       # No path filter: a secret can land in any file.
-      - name: gitleaks (full history)
+      - name: gitleaks (history of the checked-out commit)
         if: ${{ !cancelled() }}
-        run: gitleaks git --no-banner --redact --verbose .
+        run: gitleaks git --no-banner --redact --verbose --log-opts="HEAD" .
 
       - name: Format
         if: ${{ !cancelled() }}
@@ -95,9 +97,21 @@ jobs:
         if: ${{ !cancelled() }}
         run: checkov --config-file .checkov.yml
 
-      # The hooks of .pre-commit-config.yaml not run above.
+      # The hooks of .pre-commit-config.yaml not run above; actionlint turns its
+      # shellcheck checks off when shellcheck is not on PATH.
       - name: pre-commit
         if: ${{ !cancelled() }}
         env:
           SKIP: tofu_fmt,tofu_validate,tofu_tflint,tofu_checkov
-        run: pre-commit run --all-files --show-diff-on-failure
+        run: |
+          set -euo pipefail
+          command -v shellcheck
+          pre-commit run --all-files --show-diff-on-failure
+
+  tool-drift:
+    name: Tool drift
+    if: github.event_name == 'schedule'
+    permissions:
+      contents: read
+      issues: write
+    uses: cdf-eagles/.github/.github/workflows/tool-drift.yaml@4f61e172889ba89b4b32a8ebdc798d432c507ba7 # v1.0.0

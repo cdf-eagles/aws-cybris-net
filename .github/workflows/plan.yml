@@ -24,6 +24,7 @@ env:
   AWS_REGION: us-east-1
   AWS_DEFAULT_REGION: us-east-1
   TF_IN_AUTOMATION: "1"
+  TOFU_VERSION: 1.13.1
 
 jobs:
   plan:
@@ -66,7 +67,7 @@ jobs:
       - uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2.0.2
         if: steps.gate.outputs.skip != 'true'
         with:
-          tofu_version: 1.13.1
+          tofu_version: ${{ env.TOFU_VERSION }}
           tofu_wrapper: false
       # The runner's own AWS command line exchanges the job's OpenID Connect
       # token for a session; no third-party action is needed for that.

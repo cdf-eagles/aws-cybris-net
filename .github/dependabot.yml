@@ -20,8 +20,23 @@ updates:
       day: monday
     cooldown:
       default-days: 7
+    groups:
+      python-tools:
+        patterns: ["*"]
     commit-message:
       prefix: "deps"
+  - package-ecosystem: pre-commit
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    cooldown:
+      default-days: 7
+    groups:
+      pre-commit-hooks:
+        patterns: ["*"]
+    commit-message:
+      prefix: "ci"
   - package-ecosystem: terraform
     directories:
       - "/stacks/*"
