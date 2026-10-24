@@ -1,5 +1,7 @@
 # Changelog
 
+- 2026-10-24
+  - The continuous integration (CI) secret scan downloads gitleaks 8.30.1, up from 8.21.2, verified by its checksum, and the download accepts only HTTPS with Transport Layer Security (TLS) 1.2 or later (`curl --proto "=https" --tlsv1.2`), so a redirect cannot drop it to plain HTTP. The terraform-docs download shares that step and now requires HTTPS too. Found internally from backlog item 381.
 - 2026-10-23
   - The Plan workflow also runs on every push to `main` and weekly, so a merge's combined result is planned and Amazon Web Services (AWS) drift shows without a pull request. The plan role's OpenID Connect (OIDC) trust adds the `ref:refs/heads/main` subject in both shapes to the same read-only role rather than a second role: the permissions are identical, and `main` takes only pull requests whose code the `pull_request` subject already trusted. Found internally from backlog item 363.
   - The weekly Plan run keeps one `AWS drift: <stack>` issue open per stack while its plan shows changes, listing the summary line and the changed resource addresses (no values), and closes it at the first clean plan. Only a pull request's Plan runs cancel each other now, and the Dependabot gate applies to pull requests only.
