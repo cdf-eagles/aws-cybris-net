@@ -2,7 +2,8 @@
 # Applies the standard GitHub settings to one of the account's repositories with the
 # GitHub CLI (gh), signed in as an owner. Safe to run again: every call sets
 # state rather than adding it. Per-repository values (allowed third-party
-# actions, required checks, deploy-key bypass, release tags) are read from
+# actions, required checks, deploy-key bypass, release tags and their
+# pattern) are read from
 # scripts/github-settings/<repository>.conf.
 #
 #   sh scripts/configure-github.sh aws-cybris-net            # apply
@@ -33,9 +34,18 @@ allowed_actions=""
 required_checks=""
 bypass_deploy_keys="false"
 release_tags="false"
+release_tag_pattern="v*"
 # shellcheck source=/dev/null
 . "$conf"
 repo="$owner/$name"
+
+# The pattern goes into the rulesets' JSON as written, so it must be a plain
+# fnmatch pattern: no quote, backslash, space, or leading refs/.
+case "$release_tag_pattern" in
+  ""|*\"*|*\\*|*\ *|refs/*)
+    printf '%s\n' "release_tag_pattern in $conf is not a plain tag pattern: '$release_tag_pattern'" >&2
+    exit 2 ;;
+esac
 
 # Auth preflight: stop before any other call if gh cannot act as an admin.
 if ! gh auth status >/dev/null 2>&1; then
@@ -225,8 +235,9 @@ if gh api "repos/$repo/branches/$default_branch/protection" >/dev/null 2>&1; the
 fi
 
 if [ "$release_tags" = "true" ]; then
-  # Release tags v* are created by administrators only and can never be moved
-  # or deleted.
+  # Release tags (release_tag_pattern, v* unless the settings file names
+  # another) are created by administrators only and can never be moved or
+  # deleted.
   create_id=$(gh api "repos/$repo/rulesets" --jq '.[] | select(.name == "release-tags-create") | .id')
   create_rs=$(cat <<JSON
 {
@@ -234,7 +245,7 @@ if [ "$release_tags" = "true" ]; then
   "target": "tag",
   "enforcement": "active",
   "bypass_actors": [$admin_bypass],
-  "conditions": {"ref_name": {"include": ["refs/tags/v*"], "exclude": []}},
+  "conditions": {"ref_name": {"include": ["refs/tags/$release_tag_pattern"], "exclude": []}},
   "rules": [{"type": "creation"}]
 }
 JSON
@@ -248,7 +259,7 @@ JSON
   "target": "tag",
   "enforcement": "active",
   "bypass_actors": [],
-  "conditions": {"ref_name": {"include": ["refs/tags/v*"], "exclude": []}},
+  "conditions": {"ref_name": {"include": ["refs/tags/$release_tag_pattern"], "exclude": []}},
   "rules": [{"type": "update"}, {"type": "deletion"}]
 }
 JSON

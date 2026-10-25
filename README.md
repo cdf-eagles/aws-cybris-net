@@ -281,12 +281,16 @@ The per-repository values live in `scripts/github-settings/<repository>.conf`:
 | `allowed_actions` | third-party actions allowed besides GitHub's own, space-separated |
 | `required_checks` | status checks the `main` ruleset requires, one per line; empty for none |
 | `bypass_deploy_keys` | `true` lets the repository's deploy keys bypass the `main` ruleset |
-| `release_tags` | `true` for a repository that releases by signed `v*` tags: see below |
+| `release_tags` | `true` for a repository that releases by signed tags: see below |
+| `release_tag_pattern` | the tags `release_tags` protects, an fnmatch pattern under `refs/tags/`; `v*` when unset |
 
-With `release_tags="true"` (zpool-status-exporter), release tags `v*` may be
+With `release_tags="true"`, the tags that `release_tag_pattern` matches may be
 created only by the administrator role (`release-tags-create`) and can never
 be moved or deleted by anyone (`release-tags-immutable`), so a published
-release cannot change.
+release cannot change. zpool-status-exporter protects `v*`; ansible-common
+protects every tag (`*`), because its releases are named as the version with
+no `v` and its other tag keeps the history of the roles it removed. A `*` does
+not match a slash, so a tag name with one is not covered.
 
 This repository requires the `validate` check and both `plan` checks.
 `.github/dependabot.yml` keeps the pinned actions and the provider
