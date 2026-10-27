@@ -30,10 +30,14 @@ outputs. No stack exports whole objects.
 ## Rules
 
 - **Nothing in the running environment is stopped, replaced, or deleted by an
-  apply.** Existing resources are adopted with `import` blocks. A plan that
-  shows `destroy` or `replace` is a failed change, not a judgment call. The
-  EIP, the data volumes, the KMS key, the VPC, and the state bucket carry
-  `prevent_destroy`.
+  apply unless the change names it.** Existing resources are adopted with
+  `import` blocks, and an adoption plan that shows `destroy` or `replace` is a
+  failed change, not a judgment call. A change that removes something on
+  purpose states its expected plan line and every resource it destroys before
+  the plan runs, and is applied from its branch on a workstation before its
+  pull request merges; the Plan check still refuses any destroy or replace, so
+  it passes once the apply has run. The EIP, the data volumes, the KMS key,
+  the VPC, and the state bucket carry `prevent_destroy`.
 - Every stack pins `required_version` and the AWS provider, and commits its
   `.terraform.lock.hcl`.
 - Credentials come from IAM Identity Center (`aws sso login`) for people and

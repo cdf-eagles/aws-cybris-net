@@ -1,5 +1,7 @@
 # Changelog
 
+- 2026-10-27
+  - Secure Shell (SSH) no longer reaches the hosts from the internet: `ssh_source_cidrs` in `20-platform` defaults to an empty list, which removes the four port 22 rules for the home Internet service provider's ranges, and SSH arrives over the Tailscale network. A new instance sets the variable on the command line only until it joins the tailnet. Found internally from backlog item 419.
 - 2026-10-25
   - `ansible-common` protects its tags: only the administrator role creates one, and no one moves or deletes one. Its consumers install the collection by tag, so a moved tag would change what they install with no change of their own. The new `release_tag_pattern` setting names the protected tags (`v*` unless set; `*` here, since its releases carry no `v`). Found internally from backlog item 11.
   - `ansible-common` requires its new `CI` check on `main`; it required none, so nothing blocked a merge. Found internally from backlog item 159.

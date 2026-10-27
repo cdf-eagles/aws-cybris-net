@@ -15,7 +15,7 @@ resource "aws_vpc_security_group_ingress_rule" "ssh_ipv4" {
   for_each = toset(var.ssh_source_cidrs)
 
   security_group_id = aws_security_group.instance.id
-  description       = "SSH from the home Internet service provider"
+  description       = "SSH before the host joins the Tailscale network"
   ip_protocol       = "tcp"
   from_port         = 22
   to_port           = 22
