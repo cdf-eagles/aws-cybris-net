@@ -207,7 +207,7 @@ No modules.
 | ---- | ----------- | ---- | ------- | :------: |
 | <a name="input_region"></a> [region](#input\_region) | Region the platform lives in; the hosts' stacks read it from this stack's outputs. | `string` | `"us-east-1"` | no |
 | <a name="input_snapshot_retention_count"></a> [snapshot\_retention\_count](#input\_snapshot\_retention\_count) | Daily snapshots Data Lifecycle Manager keeps per volume. | `number` | `7` | no |
-| <a name="input_ssh_source_cidrs"></a> [ssh\_source\_cidrs](#input\_ssh\_source\_cidrs) | IPv4 ranges allowed to reach port 22: the home Internet service provider's blocks. Narrowed to the Tailscale network once every host is in the tailnet. | `list(string)` | <pre>[<br/>  "47.182.0.0/15",<br/>  "47.184.0.0/14",<br/>  "47.188.0.0/15",<br/>  "47.190.0.0/16"<br/>]</pre> | no |
+| <a name="input_ssh_source_cidrs"></a> [ssh\_source\_cidrs](#input\_ssh\_source\_cidrs) | IPv4 ranges allowed to reach port 22 from the internet. Empty: SSH reaches the hosts over the Tailscale network only. Set only while a new instance has not yet joined the tailnet. | `list(string)` | `[]` | no |
 | <a name="input_state_bucket_name"></a> [state\_bucket\_name](#input\_state\_bucket\_name) | Bucket that stores OpenTofu state, from 00-bootstrap; this stack reads 10-account's outputs from it. | `string` | `"cybris-net-tf-bucket"` | no |
 
 ## Outputs

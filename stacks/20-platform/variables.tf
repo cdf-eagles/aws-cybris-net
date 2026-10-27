@@ -11,14 +11,9 @@ variable "state_bucket_name" {
 }
 
 variable "ssh_source_cidrs" {
-  description = "IPv4 ranges allowed to reach port 22: the home Internet service provider's blocks. Narrowed to the Tailscale network once every host is in the tailnet."
+  description = "IPv4 ranges allowed to reach port 22 from the internet. Empty: SSH reaches the hosts over the Tailscale network only. Set only while a new instance has not yet joined the tailnet."
   type        = list(string)
-  default = [
-    "47.182.0.0/15",
-    "47.184.0.0/14",
-    "47.188.0.0/15",
-    "47.190.0.0/16",
-  ]
+  default     = []
 }
 
 variable "snapshot_retention_count" {

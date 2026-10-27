@@ -6,9 +6,12 @@ repeated here.
 
 ## What the code must never do
 
-- Plan a `destroy` or a `replace` of anything that exists in the account.
-  Existing resources are adopted with `import` blocks, and a plan is proven
-  clean (`0 to destroy, 0 to replace`) before it is applied.
+- Plan a `destroy` or a `replace` that the change does not name. Existing
+  resources are adopted with `import` blocks, and an adoption plan is proven
+  clean (`0 to destroy, 0 to replace`) before it is applied. A change that
+  removes something on purpose states its expected plan line, and every
+  resource it destroys, before the plan runs, and is applied only when the
+  plan matches.
 - Store or reference an access key. Credentials are Identity Center sessions
   for people and OIDC-assumed roles for GitHub Actions.
 - Name a person in code, comments, documentation, changelog entries, or commit
