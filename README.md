@@ -52,8 +52,10 @@ outputs. No stack exports whole objects.
 
 ## Prerequisites
 
-- [OpenTofu](https://opentofu.org/) and [tflint](https://github.com/terraform-linters/tflint)
-  at the versions in `.tool-versions`.
+- [OpenTofu](https://opentofu.org/), [tflint](https://github.com/terraform-linters/tflint),
+  and [terraform-docs](https://terraform-docs.io/) at the versions in
+  `.tool-versions`, which the `tool-pins` pre-commit hook keeps equal to the
+  workflow pins.
 - [AWS Command Line Interface (CLI)](https://aws.amazon.com/cli/) v2 with an
   Identity Center session configured (`aws configure sso`).
 - [pre-commit](https://pre-commit.com/): `pre-commit install` once per clone.
