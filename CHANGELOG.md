@@ -1,6 +1,7 @@
 # Changelog
 
 - 2026-10-28
+  - A new `tool-pins` pre-commit hook, run on every pull request by the Validate workflow's pre-commit step, fails when `.tool-versions` or a release-download line in `docs/prerequisites.md` names a different OpenTofu, tflint, or terraform-docs version from the workflow `env:` pins. The weekly Tool drift job reads only the workflow pins, so the workstation copies could fall behind unseen. `.tool-versions` now pins terraform-docs 0.24.0 too, whose releases rewrote every stack README's table separators between versions. Found internally from backlog items 431 and 235.
   - The workflows pin OpenTofu 1.13.2, tflint 0.65.0, and terraform-docs 0.24.0 (by version and checksum), the releases the weekly Tool drift job reported behind; `.tool-versions` and the tflint install steps in `docs/prerequisites.md` follow. Found internally from backlog item 418.
 - 2026-10-27
   - Secure Shell (SSH) no longer reaches the hosts from the internet: `ssh_source_cidrs` in `20-platform` defaults to an empty list, which removes the four port 22 rules for the home Internet service provider's ranges, and SSH arrives over the Tailscale network. A new instance sets the variable on the command line only until it joins the tailnet. Found internally from backlog item 419.

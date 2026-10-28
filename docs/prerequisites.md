@@ -2,8 +2,12 @@
 
 The tools a workstation needs to plan and apply this repository, and how to
 install them on macOS, Fedora, Red Hat Enterprise Linux (RHEL), Ubuntu, and
-Debian. `.tool-versions` at the repository root names the exact OpenTofu and
-tflint versions; the other tools float with the package manager.
+Debian. `.tool-versions` at the repository root names the exact OpenTofu,
+tflint, and terraform-docs versions, the ones continuous integration (CI)
+installs; the other tools float with the package manager. The `tool-pins`
+pre-commit hook (`scripts/check-tool-pins.sh`) fails when `.tool-versions` or a
+download line below differs from the workflow pins, so a version bump changes
+every copy together.
 
 | Tool | Used for | Pinned |
 |---|---|---|
@@ -12,17 +16,17 @@ tflint versions; the other tools float with the package manager.
 | [AWS Command Line Interface (CLI) v2](https://aws.amazon.com/cli/) | Identity Center sign-in, proofs | no |
 | [pre-commit](https://pre-commit.com/) | runs every check before a commit | no |
 | [Checkov](https://www.checkov.io/) | static security checks, `.checkov.yml` | no |
-| [terraform-docs](https://terraform-docs.io/) | the tables in each stack `README.md` | no |
+| [terraform-docs](https://terraform-docs.io/) | the tables in each stack `README.md` | yes, `.tool-versions` |
 | [actionlint](https://github.com/rhysd/actionlint) | lints the workflows | no |
 | [1Password CLI](https://developer.1password.com/docs/cli/) (`op`) | the `tofu` wrapper, see the README | no |
 | Python 3 with `pipx` | installs pre-commit and Checkov in isolation | no |
 
 A version manager that reads `.tool-versions`, such as
-[mise](https://mise.jdx.dev/) or asdf, installs the pinned OpenTofu and tflint
-on any of these systems: `mise install` in the repository root. The
+[mise](https://mise.jdx.dev/) or asdf, installs the pinned OpenTofu, tflint,
+and terraform-docs on any of these systems: `mise install` in the repository root. The
 per-system steps below install from the package manager instead and may give
-a newer version than the pin; `tofu version` and `tflint --version` show what
-was installed.
+a newer version than the pin; `tofu version`, `tflint --version`, and
+`terraform-docs --version` show what was installed.
 
 ## macOS (Homebrew)
 
@@ -33,8 +37,9 @@ brew install --cask 1password-cli
 ```
 
 tflint left the main Homebrew repository and lives in its own tap, hence the
-second line. Homebrew installs the current OpenTofu release, which may be
-newer than `.tool-versions`; `tofu version` shows what was installed.
+second line. Homebrew installs the current OpenTofu and terraform-docs
+releases, which may be newer than `.tool-versions`; `tofu version` and
+`terraform-docs --version` show what was installed.
 
 Then, once per clone, from the repository root (the `--config` path must be
 the root's `.tflint.hcl`, so it is written out rather than taken from the
@@ -71,7 +76,7 @@ unzip -q awscliv2.zip && sudo ./aws/install && rm -rf aws awscliv2.zip
 pipx install pre-commit
 pipx install checkov
 
-# tflint (the version in .tool-versions), terraform-docs, actionlint: release binaries into /usr/local/bin
+# tflint and terraform-docs (the versions in .tool-versions), actionlint: release binaries into /usr/local/bin
 curl -fsSLO https://github.com/terraform-linters/tflint/releases/download/v0.65.0/tflint_linux_amd64.zip
 curl -fsSLO https://github.com/terraform-linters/tflint/releases/download/v0.65.0/checksums.txt
 sha256sum --ignore-missing -c checksums.txt
@@ -104,7 +109,7 @@ unzip -q awscliv2.zip && sudo ./aws/install && rm -rf aws awscliv2.zip
 pipx install pre-commit
 pipx install checkov
 
-# tflint (the version in .tool-versions), terraform-docs, actionlint: release binaries into /usr/local/bin
+# tflint and terraform-docs (the versions in .tool-versions), actionlint: release binaries into /usr/local/bin
 curl -fsSLO https://github.com/terraform-linters/tflint/releases/download/v0.65.0/tflint_linux_amd64.zip
 curl -fsSLO https://github.com/terraform-linters/tflint/releases/download/v0.65.0/checksums.txt
 sha256sum --ignore-missing -c checksums.txt

@@ -50,6 +50,16 @@ repos:
     rev: v1.7.12
     hooks:
       - id: actionlint
+  # Every copy of a pinned tool version must match the workflow env: pin; the
+  # weekly Tool drift job reads only the workflow pins.
+  - repo: local
+    hooks:
+      - id: tool-pins
+        name: tool pins agree with the workflow pins
+        entry: sh scripts/check-tool-pins.sh
+        language: system
+        pass_filenames: false
+        files: ^(\.tool-versions|\.github/workflows/[^/]+\.ya?ml|docs/prerequisites\.md|scripts/check-tool-pins\.sh)$
   - repo: https://github.com/gitleaks/gitleaks
     rev: v8.30.1
     hooks:
