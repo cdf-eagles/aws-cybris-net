@@ -1,5 +1,7 @@
 # Changelog
 
+- 2026-10-28
+  - The workflows pin OpenTofu 1.13.2, tflint 0.65.0, and terraform-docs 0.24.0 (by version and checksum), the releases the weekly Tool drift job reported behind; `.tool-versions` and the tflint install steps in `docs/prerequisites.md` follow. Found internally from backlog item 418.
 - 2026-10-27
   - Secure Shell (SSH) no longer reaches the hosts from the internet: `ssh_source_cidrs` in `20-platform` defaults to an empty list, which removes the four port 22 rules for the home Internet service provider's ranges, and SSH arrives over the Tailscale network. A new instance sets the variable on the command line only until it joins the tailnet. Found internally from backlog item 419.
 - 2026-10-25
