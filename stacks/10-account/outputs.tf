@@ -37,3 +37,13 @@ output "persephone_instance_profile_name" {
   description = "Instance profile for persephone (Systems Manager Session Manager only), attached by 30-hosts/persephone."
   value       = aws_iam_instance_profile.ec2_persephone.name
 }
+
+output "restic_soundwave_bucket_name" {
+  description = "Bucket that holds the restic backups of soundwave."
+  value       = aws_s3_bucket.restic_soundwave.id
+}
+
+output "restic_soundwave_user_name" {
+  description = "IAM user whose access key, created outside OpenTofu, restic on soundwave uses."
+  value       = aws_iam_user.restic_soundwave.name
+}

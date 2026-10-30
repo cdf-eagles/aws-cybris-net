@@ -83,6 +83,62 @@ resource "aws_budgets_budget" "monthly" {
   }
 }
 
+# Budgets and Cost Explorer filter on a tag only once it is an active cost
+# allocation tag.
+resource "aws_ce_cost_allocation_tag" "backup" {
+  tag_key = "Backup"
+  status  = "Active"
+}
+
+resource "aws_budgets_budget" "restic_soundwave" {
+  name         = "Restic backups (soundwave)"
+  budget_type  = "COST"
+  limit_amount = "2"
+  limit_unit   = "USD"
+  time_unit    = "MONTHLY"
+
+  cost_filter {
+    name   = "TagKeyValue"
+    values = ["user:Backup$soundwave-restic"]
+  }
+
+  cost_types {
+    include_tax                = true
+    include_subscription       = true
+    use_blended                = false
+    include_refund             = false
+    include_credit             = false
+    include_upfront            = true
+    include_recurring          = true
+    include_other_subscription = true
+    include_support            = true
+    include_discount           = true
+    use_amortized              = false
+  }
+
+  notification {
+    comparison_operator        = "GREATER_THAN"
+    threshold                  = 100
+    threshold_type             = "PERCENTAGE"
+    notification_type          = "ACTUAL"
+    subscriber_email_addresses = [var.alert_email]
+  }
+
+  notification {
+    comparison_operator        = "GREATER_THAN"
+    threshold                  = 100
+    threshold_type             = "PERCENTAGE"
+    notification_type          = "FORECASTED"
+    subscriber_email_addresses = [var.alert_email]
+  }
+
+  lifecycle {
+    ignore_changes = [time_period_start]
+  }
+
+  depends_on = [aws_ce_cost_allocation_tag.backup]
+}
+
 resource "aws_ce_anomaly_monitor" "services" {
   name              = "Default-Services-Monitor"
   monitor_type      = "DIMENSIONAL"

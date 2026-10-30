@@ -13,7 +13,12 @@ repeated here.
   resource it destroys, before the plan runs, and is applied only when the
   plan matches.
 - Store or reference an access key. Credentials are Identity Center sessions
-  for people and OIDC-assumed roles for GitHub Actions.
+  for people and OIDC-assumed roles for GitHub Actions. One exception, decided
+  2026-10-30: the Identity and Access Management (IAM) user
+  `restic-soundwave` in `10-account`, whose access key restic uses to back up
+  soundwave.sleem.net. An administrator creates that key outside OpenTofu, so
+  it never reaches state, and keeps it in 1Password; the code never declares
+  or outputs it.
 - Name a person in code, comments, documentation, changelog entries, or commit
   messages. Decisions are attributed by date or role.
 - Hard-code the account ID or any other account identifier. Code reads it

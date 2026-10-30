@@ -19,7 +19,7 @@ the less often it changes and the more it protects.
 | Stack | Holds | State | Applied with |
 |---|---|---|---|
 | `stacks/00-bootstrap` | the Simple Storage Service (S3) bucket that stores every stack's state, its own included | `aws-cybris-net/00-bootstrap.tfstate` | administrator |
-| `stacks/10-account` | identity (Identity and Access Management (IAM) Identity Center permission sets, OpenID Connect roles for GitHub Actions), CloudTrail, GuardDuty, Config, budgets, cost anomaly alerts, contacts | `aws-cybris-net/10-account.tfstate` | administrator |
+| `stacks/10-account` | identity (Identity and Access Management (IAM) Identity Center permission sets, OpenID Connect roles for GitHub Actions), CloudTrail, GuardDuty, Config, budgets, cost anomaly alerts, contacts, the restic backup bucket for soundwave and its IAM user | `aws-cybris-net/10-account.tfstate` | administrator |
 | `stacks/20-platform` | Virtual Private Cloud (VPC), subnets, security groups, Key Management Service (KMS) key, Elastic Internet Protocol (IP) address (EIP), data volumes, snapshot policy | `aws-cybris-net/20-platform.tfstate` | engineer |
 | `stacks/30-hosts/<name>` | one instance per directory, its volume attachments, EIP association, and status-check alarm; the only stacks that are ever destroyed | `aws-cybris-net/30-hosts-<name>.tfstate` | engineer |
 | `modules/` | code shared by the stacks | -- | -- |
@@ -42,8 +42,11 @@ outputs. No stack exports whole objects.
   `.terraform.lock.hcl`.
 - Credentials come from IAM Identity Center (`aws sso login`) for people and
   from OIDC-assumed roles for CI; no access keys are stored anywhere. The
-  administrator profile is `cybris`; further permission sets get
-  `cybris-<permission set>`.
+  one exception, decided 2026-10-30, is the IAM user `restic-soundwave`,
+  which restic uses to back up soundwave.sleem.net to S3: an administrator
+  creates its access key outside OpenTofu, so the key never reaches state,
+  and keeps it in 1Password. The administrator profile is `cybris`; further
+  permission sets get `cybris-<permission set>`.
 - Tags: the provider's `default_tags` set `Project`, `Environment`, `Owner`,
   `ManagedBy`, `Repository`, and `Stack` on every resource; a resource adds only
   `Name` and purpose tags such as `Backup` or `Protected`.
