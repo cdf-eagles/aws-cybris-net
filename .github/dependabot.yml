@@ -37,7 +37,7 @@ updates:
         patterns: ["*"]
     commit-message:
       prefix: "ci"
-  - package-ecosystem: terraform
+  - package-ecosystem: opentofu
     directories:
       - "/stacks/*"
       - "/stacks/30-hosts/*"
