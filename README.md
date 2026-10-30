@@ -299,9 +299,14 @@ no `v` and its other tag keeps the history of the roles it removed. A `*` does
 not match a slash, so a tag name with one is not covered.
 
 This repository requires the `validate` check and both `plan` checks.
-`.github/dependabot.yml` keeps the pinned actions and the provider
-constraints current with one grouped pull request a week, after a seven-day
-cooldown on new releases.
+`.github/dependabot.yml` keeps the pinned actions, the provider
+constraints, and each stack's `.terraform.lock.hcl` current with one grouped
+pull request a week, after a seven-day cooldown on new releases. The stacks use
+Dependabot's `opentofu` ecosystem, which reads the `registry.opentofu.org`
+entries that `tofu init` writes to a lock file, so a release that the `~> 6.0`
+constraint already allows still moves the lock file. That pull request touches
+`stacks/`, so Plan fails it as it fails every such Dependabot change, and the
+change is checked out on a branch of the account's own.
 
 ```sh
 sh scripts/configure-github.sh aws-cybris-net --show

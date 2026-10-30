@@ -1,5 +1,7 @@
 # Changelog
 
+- 2026-10-29
+  - Dependabot updates the stacks through its `opentofu` ecosystem instead of `terraform`. The `terraform` ecosystem looks a provider up in the lock file under `registry.terraform.io`, finds no version beside the `registry.opentofu.org` entries, and so reported "No update possible" while hashicorp/aws 6.69.1 was out and every lock file held 6.67.0; the `opentofu` ecosystem reads those entries and refreshes a lock file inside the `~> 6.0` constraint. Found internally from backlog item 417.
 - 2026-10-28
   - A new `tool-pins` pre-commit hook, run on every pull request by the Validate workflow's pre-commit step, fails when `.tool-versions` or a release-download line in `docs/prerequisites.md` names a different OpenTofu, tflint, or terraform-docs version from the workflow `env:` pins. The weekly Tool drift job reads only the workflow pins, so the workstation copies could fall behind unseen. `.tool-versions` now pins terraform-docs 0.24.0 too, whose releases rewrote every stack README's table separators between versions. Found internally from backlog items 431 and 235.
   - The workflows pin OpenTofu 1.13.2, tflint 0.65.0, and terraform-docs 0.24.0 (by version and checksum), the releases the weekly Tool drift job reported behind; `.tool-versions` and the tflint install steps in `docs/prerequisites.md` follow. Found internally from backlog item 418.
