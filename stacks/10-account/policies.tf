@@ -69,6 +69,7 @@ data "aws_iam_policy_document" "guardrails" {
     resources = [
       local.state_bucket_arn,
       aws_s3_bucket.logs.arn,
+      aws_s3_bucket.restic_soundwave.arn,
     ]
   }
 

@@ -13,7 +13,10 @@ CloudTrail; GuardDuty; Amazon Web Services (AWS) Config (adopted); IAM Access An
 Notification Service (SNS) topic that budget and GuardDuty alerts publish to;
 the cost budget (adopted); the Cost Anomaly Detection monitor and its
 subscription (adopted); the alternate contacts; the password policy
-(adopted); and the Elastic Block Store (EBS) encryption defaults (adopted).
+(adopted); the Elastic Block Store (EBS) encryption defaults (adopted); and
+the Simple Storage Service (S3) bucket `cybris-soundwave-restic` that holds
+the restic backups of soundwave.sleem.net, with the IAM user
+`restic-soundwave` that may use only that bucket, and its $2 monthly budget.
 
 Applied from a workstation with the administrator profile, never from
 continuous integration (CI). State: `aws-cybris-net/10-account.tfstate`.
@@ -36,7 +39,7 @@ outside the allowed regions (`us-east-1`, `us-east-2`, `us-west-2`, chosen
 for a later high-availability design) except to global services; deny stopping or deleting
 CloudTrail, GuardDuty, Config, and Access Analyzer; deny terminating or
 deleting anything tagged `Protected = true` (instances, volumes, addresses,
-Virtual Private Clouds (VPCs), Key Management Service (KMS) keys); deny deleting the state and log buckets; deny leaving the
+Virtual Private Clouds (VPCs), Key Management Service (KMS) keys); deny deleting the state, log, and restic backup buckets; deny leaving the
 organization or closing the account. An administrator who needs one of those
 actions edits this stack, which is the point.
 
@@ -134,6 +137,31 @@ Detection writes, so BillingAccess's inline policy is the guard rails plus
 the anomaly read, create, and update actions; deleting a monitor or a
 subscription stays with AdministratorAccess.
 
+## Restic backups of soundwave
+
+`cybris-soundwave-restic` takes restic backups from soundwave.sleem.net. It
+is private, versioned, and encrypted with SSE-S3 (server-side encryption
+with S3-managed keys). Current objects never expire, because restic prunes
+its own repository; a deleted or overwritten object is kept as a noncurrent
+version for 30 days, and expired delete markers and incomplete multipart
+uploads are cleaned up.
+
+The IAM user `restic-soundwave` (path `/service/`) is the account's only IAM
+user, an exception to the no-access-key rule decided 2026-10-30. Its policy
+sits on the group `restic-backup`: list the bucket, and get, put, and delete
+its objects, nothing else, with an explicit deny on deleting object versions
+and on changing the bucket's versioning, lifecycle, or policy. An
+administrator creates the access key outside OpenTofu, so it never reaches
+state, and keeps it in 1Password:
+
+```sh
+aws iam create-access-key --user-name restic-soundwave
+```
+
+The budget `Restic backups (soundwave)` alerts at $2 a month, actual or
+forecast, on costs tagged `Backup = soundwave-restic`; this stack activates
+`Backup` as a cost allocation tag so that the budget can filter on it.
+
 ## Not managed here
 
 The 25 Config rules created by hand stay as they are; a conformance pack
@@ -167,8 +195,10 @@ No modules.
 | [aws_accessanalyzer_analyzer.account](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/accessanalyzer_analyzer) | resource |
 | [aws_account_alternate_contact.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/account_alternate_contact) | resource |
 | [aws_budgets_budget.monthly](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/budgets_budget) | resource |
+| [aws_budgets_budget.restic_soundwave](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/budgets_budget) | resource |
 | [aws_ce_anomaly_monitor.services](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ce_anomaly_monitor) | resource |
 | [aws_ce_anomaly_subscription.services](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ce_anomaly_subscription) | resource |
+| [aws_ce_cost_allocation_tag.backup](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ce_cost_allocation_tag) | resource |
 | [aws_cloudtrail.account](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudtrail) | resource |
 | [aws_cloudwatch_event_rule.guardduty_findings](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudwatch_event_rule) | resource |
 | [aws_cloudwatch_event_target.guardduty_findings](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudwatch_event_target) | resource |
@@ -187,6 +217,8 @@ No modules.
 | [aws_guardduty_detector_feature.us_west_2_disabled](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/guardduty_detector_feature) | resource |
 | [aws_guardduty_detector_feature.us_west_2_rds_login_disabled](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/guardduty_detector_feature) | resource |
 | [aws_iam_account_password_policy.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_account_password_policy) | resource |
+| [aws_iam_group.restic_backup](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_group) | resource |
+| [aws_iam_group_policy.restic_backup](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_group_policy) | resource |
 | [aws_iam_instance_profile.ec2_persephone](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_instance_profile) | resource |
 | [aws_iam_openid_connect_provider.github](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_openid_connect_provider) | resource |
 | [aws_iam_policy.engineer_lead](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_policy) | resource |
@@ -200,6 +232,8 @@ No modules.
 | [aws_iam_role_policy_attachment.dlm](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy_attachment) | resource |
 | [aws_iam_role_policy_attachment.ec2_persephone_ssm](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy_attachment) | resource |
 | [aws_iam_role_policy_attachment.gha_aws_cybris_net_plan_read_only](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy_attachment) | resource |
+| [aws_iam_user.restic_soundwave](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_user) | resource |
+| [aws_iam_user_group_membership.restic_soundwave](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_user_group_membership) | resource |
 | [aws_identitystore_group.administrators](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/identitystore_group) | resource |
 | [aws_identitystore_group.billing](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/identitystore_group) | resource |
 | [aws_identitystore_group.engineers](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/identitystore_group) | resource |
@@ -209,18 +243,25 @@ No modules.
 | [aws_kms_key.session_manager](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/kms_key) | resource |
 | [aws_s3_bucket.config](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket) | resource |
 | [aws_s3_bucket.logs](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket) | resource |
+| [aws_s3_bucket.restic_soundwave](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket) | resource |
 | [aws_s3_bucket_lifecycle_configuration.config](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_lifecycle_configuration) | resource |
 | [aws_s3_bucket_lifecycle_configuration.logs](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_lifecycle_configuration) | resource |
+| [aws_s3_bucket_lifecycle_configuration.restic_soundwave](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_lifecycle_configuration) | resource |
 | [aws_s3_bucket_ownership_controls.config](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_ownership_controls) | resource |
 | [aws_s3_bucket_ownership_controls.logs](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_ownership_controls) | resource |
+| [aws_s3_bucket_ownership_controls.restic_soundwave](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_ownership_controls) | resource |
 | [aws_s3_bucket_policy.config](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_policy) | resource |
 | [aws_s3_bucket_policy.logs](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_policy) | resource |
+| [aws_s3_bucket_policy.restic_soundwave](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_policy) | resource |
 | [aws_s3_bucket_public_access_block.config](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_public_access_block) | resource |
 | [aws_s3_bucket_public_access_block.logs](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_public_access_block) | resource |
+| [aws_s3_bucket_public_access_block.restic_soundwave](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_public_access_block) | resource |
 | [aws_s3_bucket_server_side_encryption_configuration.config](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_server_side_encryption_configuration) | resource |
 | [aws_s3_bucket_server_side_encryption_configuration.logs](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_server_side_encryption_configuration) | resource |
+| [aws_s3_bucket_server_side_encryption_configuration.restic_soundwave](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_server_side_encryption_configuration) | resource |
 | [aws_s3_bucket_versioning.config](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_versioning) | resource |
 | [aws_s3_bucket_versioning.logs](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_versioning) | resource |
+| [aws_s3_bucket_versioning.restic_soundwave](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_versioning) | resource |
 | [aws_sns_topic.account_alerts](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/sns_topic) | resource |
 | [aws_sns_topic_policy.account_alerts](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/sns_topic_policy) | resource |
 | [aws_sns_topic_subscription.account_alerts_email](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/sns_topic_subscription) | resource |
@@ -245,6 +286,8 @@ No modules.
 | [aws_iam_policy_document.github_trust](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 | [aws_iam_policy_document.guardrails](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 | [aws_iam_policy_document.logs_bucket](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
+| [aws_iam_policy_document.restic_backup](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
+| [aws_iam_policy_document.restic_soundwave_bucket](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 | [aws_iam_policy_document.session_manager_key](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 | [aws_iam_policy_document.state_plan](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 | [aws_identitystore_user.admin](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/identitystore_user) | data source |
@@ -282,4 +325,6 @@ No modules.
 | <a name="output_logs_bucket_name"></a> [logs\_bucket\_name](#output\_logs\_bucket\_name) | Bucket that holds the CloudTrail logs. |
 | <a name="output_permission_set_arns"></a> [permission\_set\_arns](#output\_permission\_set\_arns) | Permission set ARNs by key, for the plan and apply workflows' documentation. |
 | <a name="output_persephone_instance_profile_name"></a> [persephone\_instance\_profile\_name](#output\_persephone\_instance\_profile\_name) | Instance profile for persephone (Systems Manager Session Manager only), attached by 30-hosts/persephone. |
+| <a name="output_restic_soundwave_bucket_name"></a> [restic\_soundwave\_bucket\_name](#output\_restic\_soundwave\_bucket\_name) | Bucket that holds the restic backups of soundwave. |
+| <a name="output_restic_soundwave_user_name"></a> [restic\_soundwave\_user\_name](#output\_restic\_soundwave\_user\_name) | IAM user whose access key, created outside OpenTofu, restic on soundwave uses. |
 <!-- END_TF_DOCS -->
