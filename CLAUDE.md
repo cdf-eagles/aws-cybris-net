@@ -30,6 +30,9 @@ repeated here.
 - One stack per lifecycle (`00-bootstrap`, `10-account`, `20-platform`,
   `30-hosts/<name>`); one state key per stack; cross-stack references carry
   identifiers only.
+- A stack reads only lower-numbered stacks, through outputs or data sources,
+  never a higher-numbered one, so an empty account applies in number order. A
+  setting that names a higher stack's resource lives in that stack.
 - Every stack has `versions.tf` (pinned `required_version` and provider),
   `providers.tf` with `default_tags`, `variables.tf`, `locals.tf`, `main.tf`,
   `outputs.tf`, and `imports.tf` while adoption is in progress. Each stack

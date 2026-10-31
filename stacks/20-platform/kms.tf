@@ -1,5 +1,4 @@
-# The account's one customer-managed key: it encrypts every volume and is the
-# EBS default (set in 10-account).
+# The key that encrypts every volume and is the account's EBS default key.
 data "aws_iam_policy_document" "persephone_key" {
   #checkov:skip=CKV_AWS_109:a key policy names its own key as * and must grant the account root kms:*
   #checkov:skip=CKV_AWS_111:a key policy names its own key as * and must grant the account root kms:*
@@ -38,4 +37,10 @@ resource "aws_kms_key" "persephone" {
 resource "aws_kms_alias" "persephone" {
   name          = "alias/persephone-kms-key"
   target_key_id = aws_kms_key.persephone.key_id
+}
+
+# New volumes default to this key. Created, not imported: setting the default
+# to the key it already names changes nothing.
+resource "aws_ebs_default_kms_key" "this" {
+  key_arn = aws_kms_key.persephone.arn
 }

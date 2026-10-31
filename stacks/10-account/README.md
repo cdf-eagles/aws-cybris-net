@@ -13,7 +13,8 @@ CloudTrail; GuardDuty; Amazon Web Services (AWS) Config (adopted); IAM Access An
 Notification Service (SNS) topic that budget and GuardDuty alerts publish to;
 the cost budget (adopted); the Cost Anomaly Detection monitor and its
 subscription (adopted); the alternate contacts; the password policy
-(adopted); the Elastic Block Store (EBS) encryption defaults (adopted); and
+(adopted); Elastic Block Store (EBS) encryption by default (adopted; the
+default key is set by `20-platform`, beside the key); and
 the Simple Storage Service (S3) bucket `cybris-soundwave-restic` that holds
 the restic backups of soundwave.sleem.net, with the IAM user
 `restic-soundwave` that may use only that bucket, and its $2 monthly budget.
@@ -205,7 +206,6 @@ No modules.
 | [aws_config_configuration_recorder.default](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/config_configuration_recorder) | resource |
 | [aws_config_configuration_recorder_status.default](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/config_configuration_recorder_status) | resource |
 | [aws_config_delivery_channel.default](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/config_delivery_channel) | resource |
-| [aws_ebs_default_kms_key.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ebs_default_kms_key) | resource |
 | [aws_ebs_encryption_by_default.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ebs_encryption_by_default) | resource |
 | [aws_guardduty_detector.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/guardduty_detector) | resource |
 | [aws_guardduty_detector.us_east_2](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/guardduty_detector) | resource |
@@ -291,7 +291,6 @@ No modules.
 | [aws_iam_policy_document.session_manager_key](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 | [aws_iam_policy_document.state_plan](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 | [aws_identitystore_user.admin](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/identitystore_user) | data source |
-| [aws_kms_alias.persephone](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/kms_alias) | data source |
 | [aws_partition.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/partition) | data source |
 | [aws_ssoadmin_instances.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/ssoadmin_instances) | data source |
 

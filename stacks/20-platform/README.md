@@ -6,7 +6,8 @@ dual-stack with an Amazon-provided Internet Protocol version 6 (IPv6) /56; the
 security group the hosts attach, one resource per rule, with IPv6 rules only
 for the services the host answers on IPv6 (Hypertext Transfer Protocol (HTTP),
 HTTP Secure (HTTPS), and Network Time Protocol (NTP)); the Key Management
-Service (KMS) key that encrypts every volume; the Elastic Internet Protocol
+Service (KMS) key that encrypts every volume and is the account's default
+Elastic Block Store (EBS) key; the Elastic Internet Protocol
 (IP) address (EIP) and its reverse record; the two data volumes; and the Data
 Lifecycle Manager (DLM) policy that snapshots them daily. Everything that
 existed is adopted with `import` blocks; nothing here is stopped, replaced, or
@@ -15,7 +16,8 @@ deleted by an apply, except the five unused security-group rules removed on
 
 Applied from a workstation with the engineer profile. State:
 `aws-cybris-net/20-platform.tfstate`. The role DLM assumes comes from
-`10-account`, read through that stack's outputs. First applied 2026-10-05
+`10-account`, read through that stack's outputs; `10-account` reads nothing
+from this stack, so it applies first on an empty account. First applied 2026-10-05
 (36 imported, 12 added, 31 changed, 0 destroyed over two applies, see the
 note on the IPv6 egress rule below); the `import` blocks were removed once
 the state held the adopted resources.
@@ -173,6 +175,7 @@ No modules.
 | [aws_default_route_table.private](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/default_route_table) | resource |
 | [aws_default_security_group.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/default_security_group) | resource |
 | [aws_dlm_lifecycle_policy.daily](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/dlm_lifecycle_policy) | resource |
+| [aws_ebs_default_kms_key.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ebs_default_kms_key) | resource |
 | [aws_ebs_volume.data](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ebs_volume) | resource |
 | [aws_egress_only_internet_gateway.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/egress_only_internet_gateway) | resource |
 | [aws_eip.persephone](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/eip) | resource |

@@ -24,9 +24,12 @@ resource "aws_ebs_encryption_by_default" "this" {
   enabled = true
 }
 
-# New volumes default to the one key this account keeps; the other three are
-# scheduled for deletion by hand once nothing references them. Not imported:
-# the setting is replaced whenever its key changes, so it is simply set.
-resource "aws_ebs_default_kms_key" "this" {
-  key_arn = data.aws_kms_alias.persephone.target_key_arn
+# The default key is set by 20-platform, beside the key. Forgotten here, not
+# destroyed: destroying it resets the default to the AWS-managed key.
+removed {
+  from = aws_ebs_default_kms_key.this
+
+  lifecycle {
+    destroy = false
+  }
 }

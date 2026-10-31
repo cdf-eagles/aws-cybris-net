@@ -20,12 +20,14 @@ the less often it changes and the more it protects.
 |---|---|---|---|
 | `stacks/00-bootstrap` | the Simple Storage Service (S3) bucket that stores every stack's state, its own included | `aws-cybris-net/00-bootstrap.tfstate` | administrator |
 | `stacks/10-account` | identity (Identity and Access Management (IAM) Identity Center permission sets, OpenID Connect roles for GitHub Actions), CloudTrail, GuardDuty, Config, budgets, cost anomaly alerts, contacts, the restic backup bucket for soundwave and its IAM user | `aws-cybris-net/10-account.tfstate` | administrator |
-| `stacks/20-platform` | Virtual Private Cloud (VPC), subnets, security groups, Key Management Service (KMS) key, Elastic Internet Protocol (IP) address (EIP), data volumes, snapshot policy | `aws-cybris-net/20-platform.tfstate` | engineer |
+| `stacks/20-platform` | Virtual Private Cloud (VPC), subnets, security groups, Key Management Service (KMS) key and the account's default Elastic Block Store (EBS) key setting, Elastic Internet Protocol (IP) address (EIP), data volumes, snapshot policy | `aws-cybris-net/20-platform.tfstate` | engineer |
 | `stacks/30-hosts/<name>` | one instance per directory, its volume attachments, EIP association, and status-check alarm; the only stacks that are ever destroyed | `aws-cybris-net/30-hosts-<name>.tfstate` | engineer |
 | `modules/` | code shared by the stacks | -- | -- |
 
 Stacks read each other's **identifiers only** through `terraform_remote_state`
-outputs. No stack exports whole objects.
+outputs. No stack exports whole objects. A stack reads only lower-numbered
+stacks, through their outputs or a data source, so an empty account applies in
+number order ("Applying every stack from nothing").
 
 ## Rules
 
@@ -189,6 +191,26 @@ rm terraform.tfstate terraform.tfstate.backup imports.tf.off
 `backend_override.tf` is ignored by git (`*_override.tf`) and must not be
 committed. `-migrate-state` copies the local state into the bucket under the
 key in `versions.tf`; the local files are then surplus.
+
+## Applying every stack from nothing
+
+No stack reads a higher-numbered stack, through `terraform_remote_state` or a
+data source, so on an empty account each stack applies whole, in number order,
+with no targeted apply:
+
+1. `00-bootstrap`, as administrator, with the local-backend procedure above.
+2. `10-account`, as administrator (`AWS_PROFILE=cybris`), after the steps its
+   README lists before a first apply. It creates the Data Lifecycle Manager
+   (DLM) role and the permission sets the later stacks need.
+3. `20-platform`, as engineer (`AWS_PROFILE=cybris-engineer`). It creates the
+   KMS key, makes it the account's default EBS key, and passes the DLM role
+   that `10-account` outputs.
+4. Each `30-hosts/<name>`, as engineer, which reads `10-account` and
+   `20-platform`.
+
+A change that makes a stack read a higher-numbered one breaks this order and
+is refused in review; the account default that names a `20-platform` key is
+therefore set in `20-platform`, not `10-account`.
 
 ## Adopting an existing state bucket
 
