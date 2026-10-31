@@ -180,9 +180,9 @@ than destroyed by code. The CI apply role arrives with the Apply workflow.
 
 | Name | Version |
 | ---- | ------- |
-| <a name="provider_aws"></a> [aws](#provider\_aws) | 6.67.0 |
-| <a name="provider_aws.us_east_2"></a> [aws.us\_east\_2](#provider\_aws.us\_east\_2) | 6.67.0 |
-| <a name="provider_aws.us_west_2"></a> [aws.us\_west\_2](#provider\_aws.us\_west\_2) | 6.67.0 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | 6.70.0 |
+| <a name="provider_aws.us_east_2"></a> [aws.us\_east\_2](#provider\_aws.us\_east\_2) | 6.70.0 |
+| <a name="provider_aws.us_west_2"></a> [aws.us\_west\_2](#provider\_aws.us\_west\_2) | 6.70.0 |
 
 ## Modules
 
