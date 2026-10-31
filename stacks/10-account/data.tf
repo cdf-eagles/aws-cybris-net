@@ -14,7 +14,3 @@ data "aws_identitystore_user" "admin" {
     }
   }
 }
-
-data "aws_kms_alias" "persephone" {
-  name = "alias/persephone-kms-key"
-}
