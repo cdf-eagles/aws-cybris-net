@@ -61,20 +61,31 @@ default; the Plan workflow reads the same values from repository secrets.
 
 `user_data.sh` runs once, as root, at the first boot of a new instance; the
 image's `ec2_configinit` runs it before `ec2_fetchkey` creates `ec2-user`.
-`templatefile()` fills in the login account's name, user ID (UID), and group ID (GID). In order, it:
+`templatefile()` fills in the login account's name, user ID (UID), and group ID (GID), and the two data volumes' IDs from 20-platform. In order, it:
 
 1. installs `python3` and `sudo` and gives `ec2-user` a sudo rule without a
    password, so Ansible can connect and become root;
 2. sets `canmount=off` on the image's empty `zroot/home` and unmounts it, so
    it cannot hide the home volume;
-3. adds `/dev/gpt/homedirs` on `/home` and `/dev/gpt/apachedirs` on
-   `/usr/local/www/apache24` to `/etc/fstab`, checks each file system, and
-   mounts it; a missing label is logged, and no volume is ever formatted;
-4. creates the login account with its UID and a primary group with its GID, the
+3. waits up to five minutes for each data volume to attach, finding its disk
+   by the NVMe serial number, which is the volume ID without its dash, since
+   this stack attaches the volumes only after the instance is running;
+4. gives a volume the label `homedirs` or `apachedirs` and a UFS file system
+   (`gpart create -s gpt`, `gpart add -t freebsd-ufs -l <label>`,
+   `newfs -U`) only when its disk is blank: no partition table, no file
+   system `fstyp` knows, and zeros in its first two mebibytes and its last;
+   a disk that holds anything is left untouched and logged, a label found on
+   another disk is logged and not mounted, and a format that stopped part way
+   is logged and left for a person;
+5. adds `/dev/gpt/homedirs` on `/home` and `/dev/gpt/apachedirs` on
+   `/usr/local/www/apache24` to `/etc/fstab`, preens each file system
+   (`fsck -p`), and mounts it; one that needs more than a preen is logged and
+   left unmounted for a person;
+6. creates the login account with its UID and a primary group with its GID, the
    home `/home/<name>`, the shell `/bin/sh`, no password, and no other
    group, unless the name or the number is taken; it creates the home
    directory only when the volume has none and changes no existing file;
-5. creates `ec2-user` with the fixed IDs 1000:1000, in `wheel`, and hands
+7. creates `ec2-user` with the fixed IDs 1000:1000, in `wheel`, and hands
    `/home/ec2-user` on the home volume to it when another ID owns it, so
    `sshd` accepts the home; an existing `ec2-user` with other IDs is logged
    as a failure.

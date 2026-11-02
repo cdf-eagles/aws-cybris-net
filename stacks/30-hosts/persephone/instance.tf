@@ -11,6 +11,8 @@ resource "aws_instance" "this" {
     login_account_name = var.login_account_name
     login_account_uid  = var.login_account_uid
     login_account_gid  = var.login_account_gid
+    home_volume_id     = local.platform.data_volume_ids["home"]
+    web_volume_id      = local.platform.data_volume_ids["web"]
   })
 
   # Systems Manager Session Manager only; the role and profile are 10-account's.
