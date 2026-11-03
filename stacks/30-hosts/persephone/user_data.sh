@@ -268,8 +268,9 @@ if mount -p | listed /dev/gpt/homedirs /home -; then
 		fi
 	fi
 	# ec2-user has fixed IDs, 1000:1000: below the 1001 the image's own accounts
-	# start from (ssm-user is 1001) and never used by the ports tree. Its home
-	# on the volume is handed to it when another ID owns it.
+	# start from (the image's ssm-user takes 1001; it moves to 9002 below) and
+	# never used by the ports tree. Its home on the volume is handed to it when
+	# another ID owns it.
 	ec2home=/home/ec2-user
 	ec2id=1000
 	if ! pw usershow -n ec2-user >/dev/null 2>&1; then
@@ -292,6 +293,45 @@ if mount -p | listed /dev/gpt/homedirs /home -; then
 				echo "$ec2home handed to ec2-user (uid $(id -u ec2-user))"
 			else
 				fail "chown $ec2home"
+			fi
+		fi
+	fi
+	# ssm-user comes with the image at 1001:1001. persephone keeps it at
+	# 9002:9002 (certbot holds 9001), the IDs that own its home on the volume
+	# and the ones persephone.cybris.net's persephone_customizations role
+	# checks. At first boot it owns only what the image made, so it is
+	# renumbered here and those files re-owned; the data volumes are skipped,
+	# since their files already carry 9002. Later, renumbering would be a job
+	# for a person, which is why the role only checks.
+	ssmid=9002
+	ssmhome=/home/ssm-user
+	if ! pw usershow -n ssm-user >/dev/null 2>&1; then
+		fail "the image has no ssm-user; persephone_customizations will refuse the host"
+	else
+		ssmold=$(id -u ssm-user)
+		ssmoldg=$(id -g ssm-user)
+		if [ "$ssmold:$ssmoldg" = "$ssmid:$ssmid" ]; then
+			echo "ssm-user is $ssmid:$ssmid; left as is"
+		elif { [ "$ssmold" != "$ssmid" ] && pw usershow -u "$ssmid" >/dev/null 2>&1; } ||
+			{ [ "$ssmoldg" != "$ssmid" ] && pw groupshow -g "$ssmid" >/dev/null 2>&1; }; then
+			fail "uid or gid $ssmid is taken; ssm-user left at $ssmold:$ssmoldg"
+		elif pw groupmod ssm-user -g "$ssmid" && pw usermod ssm-user -u "$ssmid" -g "$ssmid"; then
+			if find / \( -path /dev -o -path /home -o -path /usr/local/www/apache24 \) -prune -o \
+				-user "$ssmold" -exec chown -h "$ssmid" {} + &&
+				find / \( -path /dev -o -path /home -o -path /usr/local/www/apache24 \) -prune -o \
+					-group "$ssmoldg" -exec chgrp -h "$ssmid" {} +; then
+				echo "ssm-user renumbered $ssmold:$ssmoldg -> $ssmid:$ssmid and its files re-owned"
+			else
+				fail "re-own ssm-user's files after renumbering"
+			fi
+		else
+			fail "renumber ssm-user to $ssmid:$ssmid"
+		fi
+		if [ -d "$ssmhome" ] && [ "$(stat -f %u:%g "$ssmhome")" != "$(id -u ssm-user):$(id -g ssm-user)" ]; then
+			if chown -R ssm-user:ssm-user "$ssmhome"; then
+				echo "$ssmhome handed to ssm-user (uid $(id -u ssm-user))"
+			else
+				fail "chown $ssmhome"
 			fi
 		fi
 	fi
