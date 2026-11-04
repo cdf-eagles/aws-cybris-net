@@ -8,11 +8,12 @@ resource "aws_instance" "this" {
   instance_type = "t3a.medium"
   key_name      = var.key_pair_name
   user_data = templatefile("${path.module}/user_data.sh", {
-    login_account_name = var.login_account_name
-    login_account_uid  = var.login_account_uid
-    login_account_gid  = var.login_account_gid
-    home_volume_id     = local.platform.data_volume_ids["home"]
-    web_volume_id      = local.platform.data_volume_ids["web"]
+    login_account_name        = var.login_account_name
+    login_account_uid         = var.login_account_uid
+    login_account_gid         = var.login_account_gid
+    home_volume_id            = local.platform.data_volume_ids["home"]
+    web_volume_id             = local.platform.data_volume_ids["web"]
+    format_blank_data_volumes = var.format_blank_data_volumes ? "yes" : "no"
   })
 
   # Systems Manager Session Manager only; the role and profile are 10-account's.
