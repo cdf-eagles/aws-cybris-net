@@ -86,16 +86,28 @@ find_disk() {
 }
 
 # True when the mebibyte at the given offset, in mebibytes, reads back in full
-# and holds only zero bytes.
+# and holds only zero bytes. It reads in 64 KiB blocks: on 2026-11-04 two blank
+# EBS disks failed this check at first boot with single 1 MiB reads, while the
+# same code passed on a zero memory disk. When the check fails it logs what dd
+# returned, how much it read, and the first non-zero line.
 zero_mib() {
 	zm_sample=$(mktemp) || return 1
+	zm_err=$(mktemp) || {
+		rm -f "$zm_sample"
+		return 1
+	}
+	dd if="/dev/$1" of="$zm_sample" bs=64k count=16 skip=$(($2 * 16)) 2>"$zm_err"
+	zm_rc=$?
+	zm_size=$(stat -f %z "$zm_sample")
+	zm_nonzero=$(od -An -v -tx1 "$zm_sample" | tr -d ' 0\n' | wc -c | tr -d ' ')
 	zm_blank=1
-	if dd if="/dev/$1" of="$zm_sample" bs=1m count=1 skip="$2" 2>/dev/null &&
-		[ "$(stat -f %z "$zm_sample")" = 1048576 ] &&
-		[ -z "$(od -An -v -tx1 "$zm_sample" | tr -d ' 0\n')" ]; then
+	if [ "$zm_rc" = 0 ] && [ "$zm_size" = 1048576 ] && [ "$zm_nonzero" = 0 ]; then
 		zm_blank=0
+	else
+		echo "$1 mebibyte $2: dd rc=$zm_rc, $zm_size bytes read, $zm_nonzero non-zero hex digits; dd said: $(tr '\n' ' ' <"$zm_err")"
+		od -A d -tx1 "$zm_sample" | awk 'NF > 1 { for (i = 2; i <= NF; i++) if ($i != "00") { print "first non-zero line: " $0; exit } }'
 	fi
-	rm -f "$zm_sample"
+	rm -f "$zm_sample" "$zm_err"
 	return "$zm_blank"
 }
 
@@ -119,6 +131,11 @@ blank_disk() {
 		return 1
 		;;
 	esac
+	# Diagnostic only, not part of the decision: whether a single 1 MiB read
+	# works on this disk, the read the check used before 2026-11-04.
+	bd_diag=$(dd if="/dev/$1" of=/dev/null bs=1m count=1 2>&1)
+	bd_rc=$?
+	echo "diagnostic: one 1 MiB read of $1: rc=$bd_rc, $(printf '%s' "$bd_diag" | tr '\n' ' ')"
 	if zero_mib "$1" 0 && zero_mib "$1" 1 && zero_mib "$1" $((bd_size / 1048576 - 1)); then
 		return 0
 	fi
