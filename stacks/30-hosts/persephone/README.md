@@ -61,7 +61,8 @@ default; the Plan workflow reads the same values from repository secrets.
 
 `user_data.sh` runs once, as root, at the first boot of a new instance; the
 image's `ec2_configinit` runs it before `ec2_fetchkey` creates `ec2-user`.
-`templatefile()` fills in the login account's name, user ID (UID), and group ID (GID), and the two data volumes' IDs from 20-platform. In order, it:
+`templatefile()` fills in the login account's name, user ID (UID), and group ID (GID), the two data volumes' IDs from 20-platform, and `format_blank_data_volumes` as
+`yes` or `no`. In order, it:
 
 1. installs `python3` and `sudo` and gives `ec2-user` a sudo rule without a
    password, so Ansible can connect and become root;
@@ -72,9 +73,13 @@ image's `ec2_configinit` runs it before `ec2_fetchkey` creates `ec2-user`.
    this stack attaches the volumes only after the instance is running;
 4. gives a volume the label `homedirs` or `apachedirs` and a UFS file system
    (`gpart create -s gpt`, `gpart add -t freebsd-ufs -l <label>`,
-   `newfs -U`) only when its disk is blank: no partition table, no file
-   system `fstyp` knows, and zeros in its first two mebibytes and its last;
-   a disk that holds anything is left untouched and logged, a label found on
+   `newfs -U`) only when `format_blank_data_volumes` is true and its disk is
+   blank: no partition table, no file system `fstyp` knows, and no GELI
+   metadata. A new EBS volume is not zero-filled, so the content itself is not
+   tested, and the variable is the safeguard: it is false by default and set
+   only for a rebuild whose volumes are new, as
+   `tofu apply -var format_blank_data_volumes=true`. A blank disk with the
+   variable false, or a disk that holds anything, is left untouched and logged, a label found on
    another disk is logged and not mounted, and a format that stopped part way
    is logged and left for a person;
 5. adds `/dev/gpt/homedirs` on `/home` and `/dev/gpt/apachedirs` on
@@ -224,6 +229,7 @@ No modules.
 
 | Name | Description | Type | Default | Required |
 | ---- | ----------- | ---- | ------- | :------: |
+| <a name="input_format_blank_data_volumes"></a> [format\_blank\_data\_volumes](#input\_format\_blank\_data\_volumes) | Lets the first boot label and format a data volume that has no partition table, file system, or GELI metadata. Off by default: set it only for a rebuild whose data volumes are new and empty. The user data runs at the first boot only, so changing this later does nothing until the next replacement. | `bool` | `false` | no |
 | <a name="input_key_pair_name"></a> [key\_pair\_name](#input\_key\_pair\_name) | Name of the EC2 key pair the instance was launched with; supplied by op.env, never committed, because the name carries an account name. | `string` | n/a | yes |
 | <a name="input_login_account_gid"></a> [login\_account\_gid](#input\_login\_account\_gid) | Group ID (GID) of the login account's primary group, which already owns its home directory on the home volume; supplied by op.env, never committed. | `number` | n/a | yes |
 | <a name="input_login_account_name"></a> [login\_account\_name](#input\_login\_account\_name) | Name of the personal login account the first boot creates; supplied by op.env, never committed. | `string` | n/a | yes |

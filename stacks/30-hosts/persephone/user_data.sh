@@ -1,7 +1,7 @@
 #!/bin/sh
 # First boot of persephone, rendered by templatefile(). It waits for the two
-# data volumes to attach, labels and formats a volume only when it is blank,
-# mounts both by their partition labels, creates the login account, and
+# data volumes to attach, labels and formats a volume only when it is blank and
+# format_blank_data_volumes is yes, mounts both by their partition labels, creates the login account, and
 # installs what Ansible needs to connect and become root; Ansible configures
 # the rest. Safe to run again: each step checks before it acts, and a volume
 # that holds anything is never written.
@@ -18,6 +18,9 @@ login_account_gid="${login_account_gid}"
 home_volume_id="${home_volume_id}"
 # shellcheck disable=SC2269
 web_volume_id="${web_volume_id}"
+# yes only for a rebuild whose data volumes are new; anything else is no.
+# shellcheck disable=SC2269
+format_blank_data_volumes="${format_blank_data_volumes}"
 attach_wait=300
 log=/var/log/user_data.log
 failures=0
@@ -85,36 +88,12 @@ find_disk() {
 	done
 }
 
-# True when the mebibyte at the given offset, in mebibytes, reads back in full
-# and holds only zero bytes. It reads in 64 KiB blocks: on 2026-11-04 two blank
-# EBS disks failed this check at first boot with single 1 MiB reads, while the
-# same code passed on a zero memory disk. When the check fails it logs what dd
-# returned, how much it read, and the first non-zero line.
-zero_mib() {
-	zm_sample=$(mktemp) || return 1
-	zm_err=$(mktemp) || {
-		rm -f "$zm_sample"
-		return 1
-	}
-	dd if="/dev/$1" of="$zm_sample" bs=64k count=16 skip=$(($2 * 16)) 2>"$zm_err"
-	zm_rc=$?
-	zm_size=$(stat -f %z "$zm_sample")
-	zm_nonzero=$(od -An -v -tx1 "$zm_sample" | tr -d ' 0\n' | wc -c | tr -d ' ')
-	zm_blank=1
-	if [ "$zm_rc" = 0 ] && [ "$zm_size" = 1048576 ] && [ "$zm_nonzero" = 0 ]; then
-		zm_blank=0
-	else
-		echo "$1 mebibyte $2: dd rc=$zm_rc, $zm_size bytes read, $zm_nonzero non-zero hex digits; dd said: $(tr '\n' ' ' <"$zm_err")"
-		od -A d -tx1 "$zm_sample" | awk 'NF > 1 { for (i = 2; i <= NF; i++) if ($i != "00") { print "first non-zero line: " $0; exit } }'
-	fi
-	rm -f "$zm_sample" "$zm_err"
-	return "$zm_blank"
-}
-
-# True only for a disk that has never been written: no partition table, no
-# file system that fstyp(8) knows, and zeros in its first two mebibytes and
-# its last, where an MBR, both GPT headers, and the superblock of a UFS
-# partition aligned at one mebibyte live. Prints why when it is not.
+# True when a disk shows nothing a person could lose: no partition table
+# (gpart also lists a damaged one), no file system fstyp knows, ZFS included,
+# and no GELI metadata. Its content is not sampled: a new EBS volume is not
+# zero-filled (a blank-volume rehearsal on 2026-11-04 read random bytes after
+# its first 4 KiB). Formatting also needs format_blank_data_volumes set to
+# yes. Prints why when the disk is not blank.
 blank_disk() {
 	if gpart show "$1" >/dev/null 2>&1; then
 		echo "$1 has a partition table"
@@ -124,23 +103,11 @@ blank_disk() {
 		echo "$1 holds a $(fstyp "/dev/$1" 2>/dev/null) file system"
 		return 1
 	fi
-	bd_size=$(diskinfo "$1" 2>/dev/null | awk '{ print $3 }')
-	case $bd_size in
-	'' | *[!0-9]*)
-		echo "$1 size unreadable"
+	if geli dump "/dev/$1" >/dev/null 2>&1; then
+		echo "$1 holds GELI metadata"
 		return 1
-		;;
-	esac
-	# Diagnostic only, not part of the decision: whether a single 1 MiB read
-	# works on this disk, the read the check used before 2026-11-04.
-	bd_diag=$(dd if="/dev/$1" of=/dev/null bs=1m count=1 2>&1)
-	bd_rc=$?
-	echo "diagnostic: one 1 MiB read of $1: rc=$bd_rc, $(printf '%s' "$bd_diag" | tr '\n' ' ')"
-	if zero_mib "$1" 0 && zero_mib "$1" 1 && zero_mib "$1" $((bd_size / 1048576 - 1)); then
-		return 0
 	fi
-	echo "$1 has data in its first two mebibytes or its last"
-	return 1
+	return 0
 }
 
 format_disk() {
@@ -212,7 +179,11 @@ prepare_data_volume() {
 		return 1
 	fi
 	if blank_disk "$pv_disk"; then
-		echo "$pv_disk is blank; labelling it $2 and formatting it"
+		if [ "$format_blank_data_volumes" != yes ]; then
+			fail "$pv_disk is blank, but format_blank_data_volumes is $format_blank_data_volumes, not yes; left untouched"
+			return 1
+		fi
+		echo "$pv_disk is blank and format_blank_data_volumes is yes; labelling it $2 and formatting it"
 		format_disk "$pv_disk" "$2"
 		return
 	fi

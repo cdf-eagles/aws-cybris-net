@@ -48,3 +48,9 @@ variable "login_account_gid" {
     error_message = "The login account GID must be a whole number from 500 to 999: below the 1000 kept for ec2-user and the 1001 upward that the image's own accounts take."
   }
 }
+
+variable "format_blank_data_volumes" {
+  description = "Lets the first boot label and format a data volume that has no partition table, file system, or GELI metadata. Off by default: set it only for a rebuild whose data volumes are new and empty. The user data runs at the first boot only, so changing this later does nothing until the next replacement."
+  type        = bool
+  default     = false
+}
