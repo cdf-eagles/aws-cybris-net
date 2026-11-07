@@ -1,5 +1,7 @@
 # Changelog
 
+- 2026-11-07
+  - Adds the private `cybris-net-sites` repository, which takes over the deploy of the three cybris.net websites from their separate repositories: the account's Tool drift workflow is allowed and its `CI` check is required on `main`. Found internally from backlog item 500.
 - 2026-10-31
   - `stacks/20-platform` sets the account's default Elastic Block Store (EBS) encryption key beside the key it names, and `stacks/10-account` forgets the setting with a `removed` block (`destroy = false`), since destroying it resets the default to the Amazon Web Services (AWS)-managed key. `10-account` read the key's alias, which `20-platform` creates, while `20-platform` reads `10-account`'s Data Lifecycle Manager (DLM) role, so on an empty account neither stack could be applied first. Found internally from backlog item 398.
   - The setting is created in `20-platform`, not imported, because setting the default to the key it already names changes nothing; the expected plans are 1 to add in `20-platform` and 1 to forget in `10-account`, each with 0 to change and 0 to destroy. The README gives the from-nothing apply order and the rule that a stack reads only lower-numbered stacks.
