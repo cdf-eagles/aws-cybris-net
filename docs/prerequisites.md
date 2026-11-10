@@ -77,8 +77,8 @@ pipx install pre-commit
 pipx install checkov
 
 # tflint and terraform-docs (the versions in .tool-versions), actionlint: release binaries into /usr/local/bin
-curl -fsSLO https://github.com/terraform-linters/tflint/releases/download/v0.65.0/tflint_linux_amd64.zip
-curl -fsSLO https://github.com/terraform-linters/tflint/releases/download/v0.65.0/checksums.txt
+curl -fsSLO https://github.com/terraform-linters/tflint/releases/download/v0.66.0/tflint_linux_amd64.zip
+curl -fsSLO https://github.com/terraform-linters/tflint/releases/download/v0.66.0/checksums.txt
 sha256sum --ignore-missing -c checksums.txt
 unzip -q tflint_linux_amd64.zip && sudo install -m 0755 tflint /usr/local/bin/tflint && rm tflint tflint_linux_amd64.zip checksums.txt
 curl -fsSL https://github.com/terraform-docs/terraform-docs/releases/download/v0.24.0/terraform-docs-v0.24.0-linux-amd64.tar.gz | tar -xz terraform-docs
@@ -110,8 +110,8 @@ pipx install pre-commit
 pipx install checkov
 
 # tflint and terraform-docs (the versions in .tool-versions), actionlint: release binaries into /usr/local/bin
-curl -fsSLO https://github.com/terraform-linters/tflint/releases/download/v0.65.0/tflint_linux_amd64.zip
-curl -fsSLO https://github.com/terraform-linters/tflint/releases/download/v0.65.0/checksums.txt
+curl -fsSLO https://github.com/terraform-linters/tflint/releases/download/v0.66.0/tflint_linux_amd64.zip
+curl -fsSLO https://github.com/terraform-linters/tflint/releases/download/v0.66.0/checksums.txt
 sha256sum --ignore-missing -c checksums.txt
 unzip -q tflint_linux_amd64.zip && sudo install -m 0755 tflint /usr/local/bin/tflint && rm tflint tflint_linux_amd64.zip checksums.txt
 curl -fsSL https://github.com/terraform-docs/terraform-docs/releases/download/v0.24.0/terraform-docs-v0.24.0-linux-amd64.tar.gz | tar -xz terraform-docs
