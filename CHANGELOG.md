@@ -1,5 +1,8 @@
 # Changelog
 
+- 2026-11-09
+  - The README lists the six steps made by hand before an apply, in order, each with a read-only check: the Identity Center instance and administrator user, the Amazon Web Services (AWS) Marketplace subscription for the host image, the Amazon Elastic Compute Cloud (EC2) key pair, the five Plan workflow secrets, the trusted GitHub identifiers of the OpenID Connect (OIDC) roles, and the Open Authorization (OAuth) client that enrols persephone on Tailscale. Only the Marketplace and Tailscale steps had been written down, and only outside the repository. Found internally from backlog item 404.
+  - The README says why the key pair stays outside the code, and that the first sign-in on an empty account, before `10-account` has created `AdministratorAccess`, has not been proven.
 - 2026-11-07
   - Adds the private `cybris-net-sites` repository, which takes over the deploy of the three cybris.net websites from their separate repositories: the account's Tool drift workflow is allowed and its `CI` check is required on `main`. Found internally from backlog item 500.
   - Removes the settings files of the three old website repositories, which `cybris-net-sites` replaced and which are archived; an archived repository is not configured. Found internally from backlog item 500.
