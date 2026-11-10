@@ -114,6 +114,127 @@ block per permission set, differing only in `sso_role_name`. Sign in with
 long as the permission set allows) and check with
 `aws sts get-caller-identity --profile cybris`.
 
+## Done by hand before an apply
+
+Six things are made by hand, because no stack creates them and the stacks that
+need one fail without it. On an empty account they come in this order; on a
+live account the checks show what is already in place. Every check only reads.
+The `op.env` files of `10-account` and `30-hosts/persephone` are also made by
+hand, from their `.example` files; each stack's README says what its variables
+hold.
+
+1. **An Identity Center instance and an administrator user**, both made in the
+   console, in `us-east-1`. Needed before the first `aws sso login` and before
+   `10-account`, whose plan reads the instance (`aws_ssoadmin_instances`) and
+   the user (`admin_user_name` in `op.env`, exactly as typed on the start page)
+   and stops with a data source error when either is missing. The stack
+   creates the groups, the permission sets, and the user's memberships. One
+   gap stays open: a new instance has no permission set, and `10-account` is
+   what creates `AdministratorAccess`, so the first sign-in on an empty
+   account has not been proven from this repository.
+
+   ```sh
+   aws sso-admin list-instances --profile cybris --query 'Instances[].[InstanceArn,IdentityStoreId]' --output text
+   ```
+
+   The check prints one line.
+
+2. **The AWS Marketplace subscription for the host image.**
+   `30-hosts/persephone/instance.tf` launches `ami-00a1141286ec55116`, an
+   Amazon Machine Image (AMI) from the Marketplace, and a launch from an
+   account that has not subscribed fails with `OptInRequired` (the product is
+   free). Needed before the instance is first created or replaced. In the
+   console, in `us-east-1`, as the engineer role: EC2, AMIs, Public images,
+   search the AMI, open its Marketplace product, and subscribe. The console's
+   Manage subscriptions page lists the subscription; nothing in this
+   repository reads it. The image can be checked, because a Marketplace image
+   can be delisted, and then `ami` needs a new value and a new subscription:
+
+   ```sh
+   aws ec2 describe-images --image-ids ami-00a1141286ec55116 --query 'Images[].[Name,State]' --output text --profile cybris-engineer --region us-east-1
+   ```
+
+   An empty answer means the image is gone.
+
+3. **The Amazon Elastic Compute Cloud (EC2) key pair.** `instance.tf` sets
+   `key_name = var.key_pair_name`, and no resource in this repository creates
+   the pair, so it exists in `us-east-1` before the instance does. Its name
+   comes from `TF_VAR_key_pair_name` in `30-hosts/persephone/op.env` and is
+   never committed, because the name carries an account name; the private half
+   stays in 1Password. Import the public half under that name:
+
+   ```sh
+   aws ec2 import-key-pair --key-name "<key pair name>" --public-key-material fileb://<path to the public key file> --profile cybris-engineer --region us-east-1
+   ```
+
+   Check it from `stacks/30-hosts/persephone`; on a live account also check
+   that the instance carries the same name, because `key_name` is not in the
+   instance's `ignore_changes` and a different name plans a replacement:
+
+   ```sh
+   op run --env-file=op.env -- sh -c 'aws ec2 describe-key-pairs --key-names "$TF_VAR_key_pair_name" --query "KeyPairs[].KeyName" --output text --profile cybris-engineer --region us-east-1'
+   aws ec2 describe-instances --instance-ids "$(tofu output -raw instance_id)" --query 'Reservations[].Instances[].KeyName' --output text --profile cybris-engineer --region us-east-1
+   ```
+
+   The pair is not an `aws_key_pair` resource because it is made once and
+   never changed: its name is a secret value from `op.env`, its private half
+   never leaves 1Password, and a resource would only record its own creation.
+
+4. **The five Plan workflow secrets**, repository secrets set once in GitHub
+   with the GitHub CLI, `gh`, run from a clone so it finds the repository.
+   Needed before the first pull request: the Plan check is required, so until
+   all five exist no pull request merges. `AWS_PLAN_ROLE_ARN` is the
+   `gha_aws_cybris_net_plan_role_arn` output of `10-account` (an Amazon
+   Resource Name (ARN) that carries the account ID, which is why it is a
+   secret); the other four are the values `30-hosts/persephone/op.env`
+   supplies. Piping keeps every value out of the terminal and the shell
+   history:
+
+   ```sh
+   cd stacks/10-account
+   tofu output -raw gha_aws_cybris_net_plan_role_arn | gh secret set AWS_PLAN_ROLE_ARN
+   cd ../30-hosts/persephone
+   for name in key_pair_name login_account_name login_account_uid login_account_gid; do
+     upper=$(printf '%s' "$name" | tr '[:lower:]' '[:upper:]')
+     op run --env-file=op.env -- sh -c "printf '%s' \"\$TF_VAR_$name\"" | gh secret set "TF_VAR_$upper"
+   done
+   ```
+
+   The check lists five names and never shows a value:
+
+   ```sh
+   gh secret list
+   ```
+
+5. **The trusted repository identifiers.** The OIDC roles trust a repository by
+   its subject, which carries the numeric identifiers of its owner and of the
+   repository. They are `github_owner_id` and `github_repository_ids` in
+   `stacks/10-account/variables.tf`. Needed before `10-account` is applied and
+   before a repository's first Plan run; a repository that is re-created
+   has a new identifier, and a new repository must be added to the map. The
+   command prints the repository's identifier, then its owner's, and both must
+   equal the values in that file:
+
+   ```sh
+   gh api 'repos/{owner}/{repo}' --jq '.id, .owner.id'
+   ```
+
+6. **The Tailscale Open Authorization (OAuth) client that enrols persephone.**
+   persephone has its own client, with the scope `auth_keys` and the one tag
+   `tag:enroll-cybris`, made in the Tailscale admin console. The tags it may
+   apply are not a console setting: they are the tags `tag:enroll-cybris` owns
+   under `tagOwners` in `policy.hujson` of the `tailscale-acl` repository,
+   which `scripts/check-policy.py` there pins to `tag:virtual`,
+   `tag:freebsd`, `tag:dns`, `tag:ntp`, and `tag:exitnode`. Needed before the
+   host's Ansible enrols the node, which is after the apply, not before it. On
+   a rebuild, remove the old node in the console first; never rename it. Check
+   in the console that the client lists that scope and that one tag, and from
+   a clone of `tailscale-acl`:
+
+   ```sh
+   python3 scripts/check-policy.py
+   ```
+
 ## Working a stack
 
 ```sh
@@ -194,7 +315,7 @@ key in `versions.tf`; the local files are then surplus.
 
 ## Applying every stack from nothing
 
-No stack reads a higher-numbered stack, through `terraform_remote_state` or a
+Do the steps of "Done by hand before an apply" first. No stack reads a higher-numbered stack, through `terraform_remote_state` or a
 data source, so on an empty account each stack applies whole, in number order,
 with no targeted apply:
 
@@ -206,7 +327,7 @@ with no targeted apply:
    KMS key, makes it the account's default EBS key, and passes the DLM role
    that `10-account` outputs.
 4. Each `30-hosts/<name>`, as engineer, which reads `10-account` and
-   `20-platform`.
+   `20-platform`, after the Marketplace subscription and the key pair.
 
 A change that makes a stack read a higher-numbered one breaks this order and
 is refused in review; the account default that names a `20-platform` key is
