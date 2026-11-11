@@ -1,5 +1,7 @@
 # Changelog
 
+- 2026-11-10
+  - `grafana-alerting` requires its new `CI` check on `main`; it had no CI, so nothing blocked a merge. Its deploy keys still bypass the ruleset, so the hourly export keeps pushing straight to `main` and CI reports on that push afterwards. Found internally from backlog item 339.
 - 2026-11-09
   - The README lists the six steps made by hand before an apply, in order, each with a read-only check: the Identity Center instance and administrator user, the Amazon Web Services (AWS) Marketplace subscription for the host image, the Amazon Elastic Compute Cloud (EC2) key pair, the five Plan workflow secrets, the trusted GitHub identifiers of the OpenID Connect (OIDC) roles, and the Open Authorization (OAuth) client that enrols persephone on Tailscale. Only the Marketplace and Tailscale steps had been written down, and only outside the repository. Found internally from backlog item 404.
   - The README says why the key pair stays outside the code, and that the first sign-in on an empty account, before `10-account` has created `AdministratorAccess`, has not been proven.
