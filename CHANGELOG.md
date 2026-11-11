@@ -1,5 +1,7 @@
 # Changelog
 
+- 2026-11-11
+  - `grafana-dashboards` requires its new `CI` check on `main`; it had no CI, so nothing blocked a merge. Grafana's dashboard changes arrive as pull requests, so the check gates them like any other, and no bypass is added. Found internally from backlog item 340.
 - 2026-11-10
   - `grafana-alerting` requires its new `CI` check on `main`; it had no CI, so nothing blocked a merge. Its deploy keys still bypass the ruleset, so the hourly export keeps pushing straight to `main` and CI reports on that push afterwards. Found internally from backlog item 339.
 - 2026-11-09
