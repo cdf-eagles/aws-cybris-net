@@ -1,5 +1,7 @@
 # Changelog
 
+- 2026-11-12
+  - `zpool-status-exporter` requires its new `Snyk` check on `main`, so a pull request that brings a high or critical dependency issue, a Snyk scan error, or a run without the Snyk token cannot merge. The Snyk app's own `security/snyk` status stays optional: it reports a Snyk-side error as a failure. Found internally from backlog item 546.
 - 2026-11-11
   - `grafana-dashboards` requires its new `CI` check on `main`; it had no CI, so nothing blocked a merge. Grafana's dashboard changes arrive as pull requests, so the check gates them like any other, and no bypass is added. Found internally from backlog item 340.
 - 2026-11-10
