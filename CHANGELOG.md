@@ -1,5 +1,7 @@
 # Changelog
 
+- 2026-11-13
+  - `claude-vault-history` requires its new `ci` check on `main`; it had no CI, so nothing blocked a merge. The check scans the full history for secrets with gitleaks and the vault's own rules, runs the vault's lint, and lints its workflow files. Its deploy key still bypasses the ruleset, so the snapshot job keeps pushing straight to `main`, and the check runs on pull requests and weekly. Found internally from backlog item 358.
 - 2026-11-12
   - `zpool-status-exporter` requires its new `Snyk` check on `main`, so a pull request that brings a high or critical dependency issue, a Snyk scan error, or a run without the Snyk token cannot merge. The Snyk app's own `security/snyk` status stays optional: it reports a Snyk-side error as a failure. Found internally from backlog item 546.
 - 2026-11-11
