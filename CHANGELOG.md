@@ -1,5 +1,7 @@
 # Changelog
 
+- 2026-11-15
+  - `homebrew-tap`, the new public Homebrew tap for py-findbig's `findbig` formula, gets its settings file: no third-party actions besides the account's Tool drift workflow, and its `Lint`, `Secret scan`, and `Formula` checks required on `main`. Found internally from backlog item 577.
 - 2026-11-14
   - `py-findbig` allows `vmactions/freebsd-vm`, which its new `Packages` workflow uses to build and test the FreeBSD package, and no longer allows `SonarSource/sonarqube-scan-action`, whose workflow was removed. Its settings file now lists the `Test` check, which `main` already required, so a later run of the script cannot drop it. Found internally from backlog items 576 and 578.
   - `py-findbig` requires its new `Packages / Linux` and `Packages / FreeBSD` checks, which build each package and install, run, and remove it; both have run and passed on its pull request.
