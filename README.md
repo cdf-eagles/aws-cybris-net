@@ -116,7 +116,7 @@ long as the permission set allows) and check with
 
 ## Done by hand before an apply
 
-Six things are made by hand, because no stack creates them and the stacks that
+Seven things are made by hand, because no stack creates them and the stacks that
 need one fail without it. On an empty account they come in this order; on a
 live account the checks show what is already in place. Every check only reads.
 The `op.env` files of `10-account` and `30-hosts/persephone` are also made by
@@ -233,6 +233,29 @@ hold.
 
    ```sh
    python3 scripts/check-policy.py
+   ```
+
+7. **The SonarCloud user token and the SonarCloud role's secrets.** A token
+   made in SonarCloud (My Account, Security) with an expiry, kept as the API
+   Credential item `SonarCloud CI token` in 1Password's Personal vault with
+   that expiry set on the item. Needed before `10-account` is planned, since
+   `op.env` reads it for the write-only parameter value (see the stack
+   README, "SonarCloud token for CI analyses"). After the apply, each
+   repository that runs the analysis gets the role's ARN as a secret, piped
+   so the value never reaches the terminal:
+
+   ```sh
+   cd stacks/10-account
+   for repo in mcp-allowlist-proxy py-findbig zpool-status-exporter; do
+     tofu output -raw gha_sonarcloud_scan_role_arn | gh secret set AWS_SONARCLOUD_ROLE_ARN --repo "cdf-eagles/$repo"
+   done
+   ```
+
+   The check prints the secret's name and date for each repository, never its
+   value:
+
+   ```sh
+   for repo in mcp-allowlist-proxy py-findbig zpool-status-exporter; do gh secret list --repo "cdf-eagles/$repo"; done
    ```
 
 ## Working a stack
@@ -468,6 +491,7 @@ clean from a workstation.
 |---|---|---|---|
 | Validate | every pull request | none | format, validate, tflint, Checkov |
 | Plan | every pull request, every push to `main`, weekly | `gha-aws-cybris-net-plan` (ReadOnlyAccess plus state read; trusts pull requests and `main`) | `tofu plan` of `20-platform` and `30-hosts/persephone`, summary line in the job summary; **fails if the plan would destroy or replace anything**; weekly, opens, updates, or closes each stack's `AWS drift` issue |
+| SonarCloud analysis (in mcp-allowlist-proxy, py-findbig, and zpool-status-exporter) | pull requests of the repository's own branches, every push to `main` | `gha-sonarcloud-scan` (reads `/ci/sonarcloud/token` only; trusts pull requests and `main`) | reads the SonarCloud token and runs the analysis with test coverage |
 | Apply | not yet | `gha-aws-cybris-net-apply` (the EngineerLead policy) | decided 2026-10-05: applies stay on a workstation until the rebuild of the host is done; the workflow and its role follow afterwards |
 
 The trust policies of the OIDC roles name each repository by both subject

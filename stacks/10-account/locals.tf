@@ -14,6 +14,13 @@ locals {
   state_bucket_arn   = "arn:aws:s3:::${var.state_bucket_name}"
   github_oidc_issuer = "token.actions.githubusercontent.com"
 
+  # Public repositories whose CI analysis sends test coverage to SonarCloud;
+  # the others keep SonarCloud's automatic analysis.
+  sonarcloud_repositories = ["mcp-allowlist-proxy", "py-findbig", "zpool-status-exporter"]
+  sonarcloud_token_name   = "/ci/sonarcloud/token"
+  # Raise after rotating the token in 1Password, so the next apply writes it.
+  sonarcloud_token_version = 1
+
   guardduty_disabled_features = [
     "S3_DATA_EVENTS",
     "EKS_AUDIT_LOGS",

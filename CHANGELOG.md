@@ -1,6 +1,8 @@
 # Changelog
 
 - 2026-11-15
+  - `stacks/10-account` adds the SonarCloud token for continuous integration (CI) analyses: a SecureString standard parameter in Systems Manager (SSM) Parameter Store under the Amazon Web Services (AWS)-managed `aws/ssm` key, written from 1Password through the write-only `value_wo` attribute so neither the plan nor the state holds it, and the role `gha-sonarcloud-scan`, which only mcp-allowlist-proxy, py-findbig, and zpool-status-exporter assume through OpenID Connect (OIDC), from pull requests and `main`, and which may only read that parameter. Found internally from backlog item 582.
+  - The ReadOnly permission set and the Plan role are denied decrypting the token, since ReadOnlyAccess allows every parameter read and the `aws/ssm` key decrypts for any principal in the account. The expected plan is 4 to add, 1 to change (the ReadOnly inline policy), 0 to destroy.
   - `homebrew-tap`, the new public Homebrew tap for py-findbig's `findbig` formula, gets its settings file: no third-party actions besides the account's Tool drift workflow, and its `Lint`, `Secret scan`, and `Formula` checks required on `main`. Found internally from backlog item 577.
 - 2026-11-14
   - `py-findbig` allows `vmactions/freebsd-vm`, which its new `Packages` workflow uses to build and test the FreeBSD package, and no longer allows `SonarSource/sonarqube-scan-action`, whose workflow was removed. Its settings file now lists the `Test` check, which `main` already required, so a later run of the script cannot drop it. Found internally from backlog items 576 and 578.

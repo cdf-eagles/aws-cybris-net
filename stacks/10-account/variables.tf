@@ -74,7 +74,17 @@ variable "github_repository_ids" {
   description = "Numeric IDs of the repositories that assume the OIDC roles, by name; part of the subject for repositories on the immutable format."
   type        = map(number)
   default = {
-    "aws-cybris-net"    = 1404901186
-    "freebsd-cloud-img" = 1129794967
+    "aws-cybris-net"        = 1404901186
+    "freebsd-cloud-img"     = 1129794967
+    "mcp-allowlist-proxy"   = 1426588999
+    "py-findbig"            = 1067219043
+    "zpool-status-exporter" = 1228990568
   }
+}
+
+variable "sonarcloud_token" {
+  description = "SonarCloud user token that the CI analyses read from Systems Manager Parameter Store. op.env reads it from 1Password; it is written through a write-only attribute, so neither the plan nor the state holds it."
+  type        = string
+  sensitive   = true
+  ephemeral   = true
 }
