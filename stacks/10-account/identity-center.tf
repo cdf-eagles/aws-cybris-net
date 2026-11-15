@@ -83,7 +83,7 @@ locals {
   inline_policies = {
     administrator = data.aws_iam_policy_document.guardrails.json
     engineer_lead = data.aws_iam_policy_document.guardrails.json
-    read_only     = data.aws_iam_policy_document.guardrails.json
+    read_only     = data.aws_iam_policy_document.read_only.json
     billing       = data.aws_iam_policy_document.billing.json
   }
 

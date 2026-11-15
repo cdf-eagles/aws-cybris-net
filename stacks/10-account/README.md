@@ -17,10 +17,12 @@ subscription (adopted); the alternate contacts; the password policy
 default key is set by `20-platform`, beside the key); and
 the Simple Storage Service (S3) bucket `cybris-soundwave-restic` that holds
 the restic backups of soundwave.sleem.net, with the IAM user
-`restic-soundwave` that may use only that bucket, and its $2 monthly budget.
+`restic-soundwave` that may use only that bucket, and its $2 monthly budget;
+and the Systems Manager (SSM) Parameter Store parameter that holds the
+SonarCloud token for continuous integration (CI) analyses, with the role
+that reads it.
 
-Applied from a workstation with the administrator profile, never from
-continuous integration (CI). State: `aws-cybris-net/10-account.tfstate`.
+Applied from a workstation with the administrator profile, never from CI. State: `aws-cybris-net/10-account.tfstate`.
 First applied 2026-10-05 (17 imported, 67 added, 5 changed, 0 destroyed);
 the `import` blocks were removed once the state held the adopted resources.
 
@@ -30,7 +32,7 @@ the `import` blocks were removed once the state held the adopted resources.
 |---|---|---|---|---|
 | AdministratorAccess | administrators | AdministratorAccess | guard rails | 1 h |
 | EngineerLead | engineers | PowerUserAccess | `EngineerLead` customer-managed policy (role reads, `PassRole` on `ec2-*` and on the `dlm-snapshots` role, no state-version deletion, no Identity Center writes), guard rails | 8 h |
-| ReadOnly | read-only | ReadOnlyAccess | guard rails | 8 h |
+| ReadOnly | read-only | ReadOnlyAccess | guard rails, and a deny on decrypting the SonarCloud token | 8 h |
 | BillingAccess | billing | job-function/Billing | guard rails plus the Cost Anomaly Detection read, create, and update actions (no deletes) | 4 h |
 
 The guard rails are one inline policy on every set: allow the two `signin`
@@ -49,7 +51,8 @@ actions edits this stack, which is the point.
 `op.env` (ignored by git; copy `op.env.example`) supplies the administrator's
 Identity Center user name, the alert address, and the alternate contacts'
 name, title, and phone number through 1Password references. None of these
-appear in code or state outputs.
+appear in code or state outputs. It also supplies the SonarCloud token, which
+is a credential: see "SonarCloud token for CI analyses".
 
 ## First apply: the order matters (done 2026-10-05; kept for a new account)
 
@@ -163,6 +166,37 @@ The budget `Restic backups (soundwave)` alerts at $2 a month, actual or
 forecast, on costs tagged `Backup = soundwave-restic`; this stack activates
 `Backup` as a cost allocation tag so that the budget can filter on it.
 
+## SonarCloud token for CI analyses
+
+The public repositories in `local.sonarcloud_repositories` (mcp-allowlist-proxy,
+py-findbig, and zpool-status-exporter) send their test coverage to SonarCloud
+from CI instead of SonarCloud's automatic analysis, decided 2026-11-15. Each
+analysis reads one SonarCloud user token from the SecureString standard
+parameter `/ci/sonarcloud/token`, encrypted with the AWS-managed `aws/ssm`
+key, through the role `gha-sonarcloud-scan`, which trusts only pull requests
+and `main` of those repositories and may only read that parameter.
+
+The token lives in 1Password as the API Credential item `SonarCloud CI token`
+in the Personal vault, tagged `home infrastructure`, with the token's expiry
+set on the item as its rotation reminder. `op.env` passes it in
+`TF_VAR_sonarcloud_token`, an ephemeral variable that feeds the parameter's
+write-only `value_wo` attribute, so neither the plan nor the state holds it.
+Every plan of this stack therefore reads the item. To rotate: make a new
+token in SonarCloud, replace the credential and the expiry on the item, raise
+`local.sonarcloud_token_version` in `locals.tf`, and apply.
+
+The `aws/ssm` key policy lets any principal in the account decrypt through
+Systems Manager, and ReadOnlyAccess allows every parameter read, so the
+ReadOnly permission set and the Plan role are denied `kms:Decrypt` whenever
+the encryption context names this parameter; that covers every read action.
+AdministratorAccess and EngineerLead can still read it.
+
+Each repository holds the role's Amazon Resource Name (ARN), the
+`gha_sonarcloud_scan_role_arn` output, as the repository secret
+`AWS_SONARCLOUD_ROLE_ARN` (it carries the account ID). Dependabot and fork
+pull requests receive no OpenID Connect token, so their CI skips the analysis
+and `main` is analysed after the merge.
+
 ## Not managed here
 
 The 25 Config rules created by hand stay as they are; a conformance pack
@@ -226,9 +260,12 @@ No modules.
 | [aws_iam_role.ec2_persephone](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role) | resource |
 | [aws_iam_role.gha_aws_cybris_net_plan](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role) | resource |
 | [aws_iam_role.gha_freebsd_cloud_img_publish](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role) | resource |
+| [aws_iam_role.gha_sonarcloud_scan](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role) | resource |
 | [aws_iam_role_policy.ec2_persephone_session_logs](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy) | resource |
+| [aws_iam_role_policy.gha_aws_cybris_net_plan_deny_sonarcloud_token](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy) | resource |
 | [aws_iam_role_policy.gha_aws_cybris_net_plan_state](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy) | resource |
 | [aws_iam_role_policy.gha_freebsd_cloud_img_publish](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy) | resource |
+| [aws_iam_role_policy.gha_sonarcloud_scan](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy) | resource |
 | [aws_iam_role_policy_attachment.dlm](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy_attachment) | resource |
 | [aws_iam_role_policy_attachment.ec2_persephone_ssm](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy_attachment) | resource |
 | [aws_iam_role_policy_attachment.gha_aws_cybris_net_plan_read_only](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy_attachment) | resource |
@@ -266,6 +303,7 @@ No modules.
 | [aws_sns_topic_policy.account_alerts](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/sns_topic_policy) | resource |
 | [aws_sns_topic_subscription.account_alerts_email](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/sns_topic_subscription) | resource |
 | [aws_ssm_document.session_preferences](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ssm_document) | resource |
+| [aws_ssm_parameter.sonarcloud_token](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ssm_parameter) | resource |
 | [aws_ssoadmin_account_assignment.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ssoadmin_account_assignment) | resource |
 | [aws_ssoadmin_customer_managed_policy_attachment.engineer_lead](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ssoadmin_customer_managed_policy_attachment) | resource |
 | [aws_ssoadmin_managed_policy_attachment.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ssoadmin_managed_policy_attachment) | resource |
@@ -278,6 +316,7 @@ No modules.
 | [aws_iam_policy_document.account_alerts](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 | [aws_iam_policy_document.billing](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 | [aws_iam_policy_document.config_bucket](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
+| [aws_iam_policy_document.deny_sonarcloud_token_decrypt](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 | [aws_iam_policy_document.dlm_trust](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 | [aws_iam_policy_document.ec2_persephone_session_logs](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 | [aws_iam_policy_document.ec2_trust](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
@@ -286,9 +325,11 @@ No modules.
 | [aws_iam_policy_document.github_trust](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 | [aws_iam_policy_document.guardrails](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 | [aws_iam_policy_document.logs_bucket](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
+| [aws_iam_policy_document.read_only](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 | [aws_iam_policy_document.restic_backup](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 | [aws_iam_policy_document.restic_soundwave_bucket](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 | [aws_iam_policy_document.session_manager_key](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
+| [aws_iam_policy_document.sonarcloud_token_read](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 | [aws_iam_policy_document.state_plan](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 | [aws_identitystore_user.admin](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/identitystore_user) | data source |
 | [aws_partition.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/partition) | data source |
@@ -307,9 +348,10 @@ No modules.
 | <a name="input_contact_title"></a> [contact\_title](#input\_contact\_title) | Title for the alternate contacts; supplied by op.env. | `string` | n/a | yes |
 | <a name="input_github_owner"></a> [github\_owner](#input\_github\_owner) | GitHub organisation whose repositories may assume the OIDC roles. | `string` | `"cdf-eagles"` | no |
 | <a name="input_github_owner_id"></a> [github\_owner\_id](#input\_github\_owner\_id) | Numeric ID of the GitHub owner; GitHub embeds it in the OpenID Connect subject of repositories created after 2026-07-15 (`repo:<owner>@<id>/<repository>@<id>:...`). | `number` | `59536280` | no |
-| <a name="input_github_repository_ids"></a> [github\_repository\_ids](#input\_github\_repository\_ids) | Numeric IDs of the repositories that assume the OIDC roles, by name; part of the subject for repositories on the immutable format. | `map(number)` | <pre>{<br/>  "aws-cybris-net": 1404901186,<br/>  "freebsd-cloud-img": 1129794967<br/>}</pre> | no |
+| <a name="input_github_repository_ids"></a> [github\_repository\_ids](#input\_github\_repository\_ids) | Numeric IDs of the repositories that assume the OIDC roles, by name; part of the subject for repositories on the immutable format. | `map(number)` | <pre>{<br/>  "aws-cybris-net": 1404901186,<br/>  "freebsd-cloud-img": 1129794967,<br/>  "mcp-allowlist-proxy": 1426588999,<br/>  "py-findbig": 1067219043,<br/>  "zpool-status-exporter": 1228990568<br/>}</pre> | no |
 | <a name="input_log_retention_days"></a> [log\_retention\_days](#input\_log\_retention\_days) | Days CloudTrail and Config objects are kept before they expire. | `number` | `400` | no |
 | <a name="input_region"></a> [region](#input\_region) | Home region: where the single-region resources of this stack live. | `string` | `"us-east-1"` | no |
+| <a name="input_sonarcloud_token"></a> [sonarcloud\_token](#input\_sonarcloud\_token) | SonarCloud user token that the CI analyses read from Systems Manager Parameter Store. op.env reads it from 1Password; it is written through a write-only attribute, so neither the plan nor the state holds it. | `string` | n/a | yes |
 | <a name="input_state_bucket_name"></a> [state\_bucket\_name](#input\_state\_bucket\_name) | Bucket that stores OpenTofu state, from 00-bootstrap. | `string` | `"cybris-net-tf-bucket"` | no |
 
 ## Outputs
@@ -321,9 +363,11 @@ No modules.
 | <a name="output_engineer_lead_policy_arn"></a> [engineer\_lead\_policy\_arn](#output\_engineer\_lead\_policy\_arn) | Customer-managed policy shared by the EngineerLead permission set and the CI apply role. |
 | <a name="output_gha_aws_cybris_net_plan_role_arn"></a> [gha\_aws\_cybris\_net\_plan\_role\_arn](#output\_gha\_aws\_cybris\_net\_plan\_role\_arn) | Role the aws-cybris-net Plan workflow assumes through OIDC. |
 | <a name="output_gha_freebsd_cloud_img_publish_role_arn"></a> [gha\_freebsd\_cloud\_img\_publish\_role\_arn](#output\_gha\_freebsd\_cloud\_img\_publish\_role\_arn) | Role the freebsd-cloud-img publish jobs assume through OIDC. |
+| <a name="output_gha_sonarcloud_scan_role_arn"></a> [gha\_sonarcloud\_scan\_role\_arn](#output\_gha\_sonarcloud\_scan\_role\_arn) | Role the SonarCloud CI jobs assume through OIDC to read the SonarCloud token; each repository keeps it as the AWS\_SONARCLOUD\_ROLE\_ARN secret. |
 | <a name="output_logs_bucket_name"></a> [logs\_bucket\_name](#output\_logs\_bucket\_name) | Bucket that holds the CloudTrail logs. |
 | <a name="output_permission_set_arns"></a> [permission\_set\_arns](#output\_permission\_set\_arns) | Permission set ARNs by key, for the plan and apply workflows' documentation. |
 | <a name="output_persephone_instance_profile_name"></a> [persephone\_instance\_profile\_name](#output\_persephone\_instance\_profile\_name) | Instance profile for persephone (Systems Manager Session Manager only), attached by 30-hosts/persephone. |
 | <a name="output_restic_soundwave_bucket_name"></a> [restic\_soundwave\_bucket\_name](#output\_restic\_soundwave\_bucket\_name) | Bucket that holds the restic backups of soundwave. |
 | <a name="output_restic_soundwave_user_name"></a> [restic\_soundwave\_user\_name](#output\_restic\_soundwave\_user\_name) | IAM user whose access key, created outside OpenTofu, restic on soundwave uses. |
+| <a name="output_sonarcloud_token_parameter_name"></a> [sonarcloud\_token\_parameter\_name](#output\_sonarcloud\_token\_parameter\_name) | Systems Manager parameter that holds the SonarCloud token. |
 <!-- END_TF_DOCS -->

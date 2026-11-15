@@ -5,9 +5,12 @@ resource "aws_iam_openid_connect_provider" "github" {
 
 data "aws_iam_policy_document" "github_trust" {
   # The plan role also trusts main, for Plan's runs on a push of main and weekly.
+  # The SonarCloud role trusts pull requests and main in each repository whose
+  # CI analysis reports test coverage (sonarcloud.tf).
   for_each = {
-    freebsd_cloud_img_publish = { repository = "freebsd-cloud-img", claims = ["ref:refs/heads/main"] }
-    aws_cybris_net_plan       = { repository = "aws-cybris-net", claims = ["pull_request", "ref:refs/heads/main"] }
+    freebsd_cloud_img_publish = { repositories = ["freebsd-cloud-img"], claims = ["ref:refs/heads/main"] }
+    aws_cybris_net_plan       = { repositories = ["aws-cybris-net"], claims = ["pull_request", "ref:refs/heads/main"] }
+    sonarcloud_scan           = { repositories = local.sonarcloud_repositories, claims = ["pull_request", "ref:refs/heads/main"] }
   }
 
   statement {
@@ -32,10 +35,10 @@ data "aws_iam_policy_document" "github_trust" {
     condition {
       test     = "StringEquals"
       variable = "${local.github_oidc_issuer}:sub"
-      values = flatten([for claim in each.value.claims : [
-        "repo:${var.github_owner}/${each.value.repository}:${claim}",
-        "repo:${var.github_owner}@${var.github_owner_id}/${each.value.repository}@${var.github_repository_ids[each.value.repository]}:${claim}",
-      ]])
+      values = flatten([for repository in each.value.repositories : [for claim in each.value.claims : [
+        "repo:${var.github_owner}/${repository}:${claim}",
+        "repo:${var.github_owner}@${var.github_owner_id}/${repository}@${var.github_repository_ids[repository]}:${claim}",
+      ]]])
     }
   }
 }

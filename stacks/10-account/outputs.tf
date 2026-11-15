@@ -13,6 +13,16 @@ output "gha_aws_cybris_net_plan_role_arn" {
   value       = aws_iam_role.gha_aws_cybris_net_plan.arn
 }
 
+output "gha_sonarcloud_scan_role_arn" {
+  description = "Role the SonarCloud CI jobs assume through OIDC to read the SonarCloud token; each repository keeps it as the AWS_SONARCLOUD_ROLE_ARN secret."
+  value       = aws_iam_role.gha_sonarcloud_scan.arn
+}
+
+output "sonarcloud_token_parameter_name" {
+  description = "Systems Manager parameter that holds the SonarCloud token."
+  value       = aws_ssm_parameter.sonarcloud_token.name
+}
+
 output "account_alerts_topic_arn" {
   description = "SNS topic that budget and GuardDuty alerts publish to."
   value       = aws_sns_topic.account_alerts.arn
