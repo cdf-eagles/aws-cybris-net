@@ -2,6 +2,7 @@
 
 - 2026-11-14
   - `py-findbig` allows `vmactions/freebsd-vm`, which its new `Packages` workflow uses to build and test the FreeBSD package, and no longer allows `SonarSource/sonarqube-scan-action`, whose workflow was removed. Its settings file now lists the `Test` check, which `main` already required, so a later run of the script cannot drop it. Found internally from backlog items 576 and 578.
+  - `py-findbig` requires its new `Packages / Linux` and `Packages / FreeBSD` checks, which build each package and install, run, and remove it; both have run and passed on its pull request.
 - 2026-11-13
   - `claude-vault-history` requires its new `ci` check on `main`; it had no CI, so nothing blocked a merge. The check scans the full history for secrets with gitleaks and the vault's own rules, runs the vault's lint, and lints its workflow files. Its deploy key still bypasses the ruleset, so the snapshot job keeps pushing straight to `main`, and the check runs on pull requests and weekly. Found internally from backlog item 358.
 - 2026-11-12
