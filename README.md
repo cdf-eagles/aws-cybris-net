@@ -415,8 +415,9 @@ workflow runs those same checks, and also scans the history of the checked-out
 commit for secrets with gitleaks (on a pull request, `main` plus the pull
 request). It runs on every pull request and every push to `main`, with no path
 filter, and weekly, and needs no AWS credentials. Its tools are pinned where an
-updater reads them: Checkov, pre-commit, and shellcheck in
-`ci/requirements.txt`, and the hooks in `.pre-commit-config.yaml`, both updated
+updater reads them: pre-commit and shellcheck in `ci/requirements.txt`,
+Checkov in `ci/checkov/requirements.txt` (its own virtual environment, since
+it needs an older `packaging` than virtualenv), and the hooks in `.pre-commit-config.yaml`, both updated
 by Dependabot; gitleaks and terraform-docs by version and checksum, and
 OpenTofu and tflint as `TOFU_VERSION` and `TFLINT_VERSION`, in the workflows'
 `env`, where the weekly run's Tool drift job opens an issue when one falls
@@ -424,7 +425,7 @@ behind its latest release. `pre-commit install` also installs a push hook that
 runs gitleaks over the commits being pushed.
 
 The Validate workflow's Snyk job tests the Python tools pinned in
-`ci/requirements.txt` and fails on any high or critical dependency issue, a
+`ci/requirements.txt` and `ci/checkov/requirements.txt` and fails on any high or critical dependency issue, a
 scan error, or a missing `SNYK_TOKEN` secret. The secret is set both as an
 Actions secret and as a Dependabot secret, because Dependabot's pull requests
 cannot read Actions secrets. The Snyk CLI is pinned with its checksum in the
