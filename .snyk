@@ -1,0 +1,20 @@
+# Snyk (https://snyk.io) policy file, read by the Validate workflow's Snyk job.
+version: v1.25.1
+ignore:
+  SNYK-PYTHON-PLY-15046763:
+    - '*':
+        reason: >-
+          ply 3.11 is reached only through checkov's bc-jsonpath-ng parser,
+          which calls ply.yacc.yacc without the picklefile argument the
+          advisory names; no fixed ply version exists. Accepted 2026-11-19,
+          backlog item 572.
+        expires: 2027-02-17T00:00:00.000Z
+        created: 2026-11-19T00:00:00.000Z
+  SNYK-PYTHON-ECDSA-6184115:
+    - '*':
+        reason: >-
+          The timing flaw affects ecdsa signing and key generation; checkov in
+          CI signs nothing with it, and the maintainers plan no fix. Accepted
+          2026-11-19, backlog item 572.
+        expires: 2027-02-17T00:00:00.000Z
+        created: 2026-11-19T00:00:00.000Z

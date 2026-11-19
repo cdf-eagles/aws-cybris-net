@@ -151,7 +151,8 @@ jobs:
             exit 1
           fi
           "${RUNNER_TEMP}/snyk" test --file=ci/requirements.txt --package-manager=pip \
-            --command="${RUNNER_TEMP}/venv/bin/python" --severity-threshold=high
+            --command="${RUNNER_TEMP}/venv/bin/python" --severity-threshold=high \
+            --policy-path=.snyk
 
   tool-drift:
     name: Tool drift

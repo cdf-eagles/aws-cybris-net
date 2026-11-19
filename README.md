@@ -428,7 +428,10 @@ The Validate workflow's Snyk job tests the Python tools pinned in
 scan error, or a missing `SNYK_TOKEN` secret. The secret is set both as an
 Actions secret and as a Dependabot secret, because Dependabot's pull requests
 cannot read Actions secrets. The Snyk CLI is pinned with its checksum in the
-workflow's `env`, and the Tool drift job tracks it.
+workflow's `env`, and the Tool drift job tracks it. `.snyk` ignores two findings in
+checkov's dependencies that no version fixes, each until an expiry date,
+after which the job fails on them again; `virtualenv`, which pre-commit
+brings in, is pinned in `ci/requirements.txt` at a fixed release.
 
 The Plan workflow runs on every pull request, every push to `main`, and weekly,
 reaches the account through an OpenID Connect (OIDC) role that trusts pull
