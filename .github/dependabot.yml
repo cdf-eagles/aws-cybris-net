@@ -14,7 +14,9 @@ updates:
     commit-message:
       prefix: "ci"
   - package-ecosystem: pip
-    directory: /ci
+    directories:
+      - /ci
+      - /ci/checkov
     schedule:
       interval: weekly
       day: monday
