@@ -1,6 +1,7 @@
 # Changelog
 
 - 2026-11-18
+  - `main` requires the `Snyk` check in aws-cybris-net, freebsd-cloud-img, homebrew-tap, mcp-allowlist-proxy, and py-findbig (`scripts/github-settings/*.conf`), so a high or critical issue in their CI tool pins cannot merge; zpool-status-exporter already required it.
   - A Snyk job in continuous integration (CI) tests the Python tools pinned in `ci/requirements.txt`, which Snyk's repository import skips, and fails on any high or critical issue, a scan error, or a missing `SNYK_TOKEN` secret. The Snyk CLI 1.1308.4 is downloaded from its GitHub release and verified by its checksum; found internally from backlog item 572.
   - Checkov moves to `ci/checkov/requirements.txt` and its own virtual environment, because it needs `packaging` below 24 and virtualenv 21.14.7, now pinned past two high Snyk findings, needs 26.3 or later. `.snyk` ignores until 2027-02-17 a critical finding in ply 3.11 and a high one in ecdsa 0.19.2, both brought in by checkov, which no version fixes and which checkov's use does not reach.
   - The weekly Tool drift job calls the Tool drift workflow v1.1.1, which also checks the `SNYK_VERSION` pin against the latest Snyk CLI release.
