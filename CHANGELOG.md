@@ -1,5 +1,8 @@
 # Changelog
 
+- 2026-11-18
+  - A Snyk job in continuous integration (CI) tests the Python tools pinned in `ci/requirements.txt`, which Snyk's repository import skips, and fails on any high or critical issue, a scan error, or a missing `SNYK_TOKEN` secret. The Snyk CLI 1.1308.4 is downloaded from its GitHub release and verified by its checksum; found internally from backlog item 572.
+  - The weekly Tool drift job calls the Tool drift workflow v1.1.1, which also checks the `SNYK_VERSION` pin against the latest Snyk CLI release.
 - 2026-11-15
   - `stacks/10-account` adds the SonarCloud token for continuous integration (CI) analyses: a SecureString standard parameter in Systems Manager (SSM) Parameter Store under the Amazon Web Services (AWS)-managed `aws/ssm` key, written from 1Password through the write-only `value_wo` attribute so neither the plan nor the state holds it, and the role `gha-sonarcloud-scan`, which only mcp-allowlist-proxy, py-findbig, and zpool-status-exporter assume through OpenID Connect (OIDC), from pull requests and `main`, and which may only read that parameter. Found internally from backlog item 582.
   - The ReadOnly permission set and the Plan role are denied decrypting the token, since ReadOnlyAccess allows every parameter read and the `aws/ssm` key decrypts for any principal in the account. The expected plan is 4 to add, 1 to change (the ReadOnly inline policy), 0 to destroy.

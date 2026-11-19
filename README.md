@@ -423,6 +423,13 @@ OpenTofu and tflint as `TOFU_VERSION` and `TFLINT_VERSION`, in the workflows'
 behind its latest release. `pre-commit install` also installs a push hook that
 runs gitleaks over the commits being pushed.
 
+The Validate workflow's Snyk job tests the Python tools pinned in
+`ci/requirements.txt` and fails on any high or critical dependency issue, a
+scan error, or a missing `SNYK_TOKEN` secret. The secret is set both as an
+Actions secret and as a Dependabot secret, because Dependabot's pull requests
+cannot read Actions secrets. The Snyk CLI is pinned with its checksum in the
+workflow's `env`, and the Tool drift job tracks it.
+
 The Plan workflow runs on every pull request, every push to `main`, and weekly,
 reaches the account through an OpenID Connect (OIDC) role that trusts pull
 requests and `main` only (so a manual run works from `main` only), and applies
