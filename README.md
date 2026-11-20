@@ -128,10 +128,13 @@ hold.
    `10-account`, whose plan reads the instance (`aws_ssoadmin_instances`) and
    the user (`admin_user_name` in `op.env`, exactly as typed on the start page)
    and stops with a data source error when either is missing. The stack
-   creates the groups, the permission sets, and the user's memberships. One
-   gap stays open: a new instance has no permission set, and `10-account` is
-   what creates `AdministratorAccess`, so the first sign-in on an empty
-   account has not been proven from this repository.
+   creates the groups, the permission sets, and the user's memberships. A
+   new instance has no permission set, and `10-account` is what creates
+   `AdministratorAccess`, so the first sign-in comes from an
+   `AdministratorAccess` set made by hand and assigned to the user, which
+   `10-account`'s first apply adopts with `import` blocks; the steps are in
+   `stacks/10-account/README.md`, "First administrator sign-in on an empty
+   account".
 
    ```sh
    aws sso-admin list-instances --profile cybris --query 'Instances[].[InstanceArn,IdentityStoreId]' --output text
@@ -342,7 +345,9 @@ Do the steps of "Done by hand before an apply" first. No stack reads a higher-nu
 data source, so on an empty account each stack applies whole, in number order,
 with no targeted apply:
 
-1. `00-bootstrap`, as administrator, with the local-backend procedure above.
+1. `00-bootstrap`, as administrator, with the local-backend procedure above;
+   the administrator's first sign-in uses the hand-made set described in
+   `stacks/10-account/README.md`.
 2. `10-account`, as administrator (`AWS_PROFILE=cybris`), after the steps its
    README lists before a first apply. It creates the Data Lifecycle Manager
    (DLM) role and the permission sets the later stacks need.
