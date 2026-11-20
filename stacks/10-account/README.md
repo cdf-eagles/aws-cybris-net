@@ -54,12 +54,95 @@ name, title, and phone number through 1Password references. None of these
 appear in code or state outputs. It also supplies the SonarCloud token, which
 is a credential: see "SonarCloud token for CI analyses".
 
+## First administrator sign-in on an empty account
+
+A new Identity Center instance holds no permission set, and this stack is
+what creates `AdministratorAccess`, which the `cybris` profile uses to apply
+`00-bootstrap` and this stack. The first sign-in therefore comes from a
+permission set made by hand, which this stack's first apply adopts with
+`import` blocks, as the 2026-10-05 apply adopted the set that already
+existed. The account's root user is not used: it would need access keys,
+which the no-access-key rule forbids. Decided 2026-11-10 (backlog item 526).
+
+1. **Make the set by hand**, in the console, in `us-east-1`, after the
+   instance and the administrator user exist: IAM Identity Center,
+   Permission sets, Create permission set, Predefined permission set,
+   `AdministratorAccess`. Keep the name `AdministratorAccess` exactly, since
+   a different name makes the plan replace the set; set the description to
+   `Administrator Access` and the session duration to 1 hour, which is what
+   `identity-center.tf` declares. Then AWS accounts, select the account,
+   Assign users or groups, Users, the administrator user, the set. Only the
+   user can be assigned: the groups do not exist until this stack creates
+   them.
+
+2. **Sign in** with the `cybris` profile, configured as the repository
+   README describes, and apply `00-bootstrap` (root README, "Creating the
+   state bucket from nothing").
+
+3. **Adopt the set in the first apply.** Before the first plan of this
+   stack, and after the steps in "First apply: the order matters" below that
+   apply to a new account, create `imports.tf` here with this content:
+
+   ```hcl
+   # First apply on an empty account only; delete after the apply.
+   data "aws_ssoadmin_permission_set" "hand_made_administrator" {
+     instance_arn = local.sso_instance_arn
+     name         = "AdministratorAccess"
+   }
+
+   import {
+     to = aws_ssoadmin_permission_set.administrator
+     id = "${data.aws_ssoadmin_permission_set.hand_made_administrator.arn},${local.sso_instance_arn}"
+   }
+
+   import {
+     to = aws_ssoadmin_managed_policy_attachment.this["administrator"]
+     id = "${local.managed_policies.administrator},${data.aws_ssoadmin_permission_set.hand_made_administrator.arn},${local.sso_instance_arn}"
+   }
+   ```
+
+   The set and its managed policy attachment are both imported, because the
+   predefined set arrives with the `AdministratorAccess` managed policy
+   attached, and an attachment that exists but is not imported would be
+   created again and fail. The identifiers are read from the instance by the
+   set's name, so nothing account-specific is typed or committed. The plan
+   must show `2 to import` and **0 to destroy, 0 to replace**; the set may
+   take an in-place update (its tags, and any field typed differently in the
+   console). A `replace` on the set means its name differs: rename it in the
+   console, never the code.
+
+4. **After the apply**, sign out and in again, then remove the hand-made
+   assignment of the set to the user, since the `administrators` group now
+   holds the same set and the stack manages only group assignments. Delete
+   `imports.tf` in the commit that records the apply.
+
+   ```sh
+   instance=$(aws sso-admin list-instances --query 'Instances[0].InstanceArn' --output text)
+   account=$(aws sts get-caller-identity --query Account --output text)
+   set=$(tofu state show -no-color aws_ssoadmin_permission_set.administrator | awk '$1 == "arn" {gsub(/"/, "", $3); print $3}')
+   aws sso-admin list-account-assignments --instance-arn "$instance" --account-id "$account" --permission-set-arn "$set" --query 'AccountAssignments[].PrincipalType' --output text
+   user=$(aws sso-admin list-account-assignments --instance-arn "$instance" --account-id "$account" --permission-set-arn "$set" --query "AccountAssignments[?PrincipalType=='USER'].PrincipalId" --output text)
+   aws sso-admin delete-account-assignment --instance-arn "$instance" --target-id "$account" --target-type AWS_ACCOUNT --permission-set-arn "$set" --principal-type USER --principal-id "$user"
+   ```
+
+   The listing shows `GROUP` and `USER` before the delete and `GROUP` alone
+   when run again afterwards, and `aws sts get-caller-identity --profile
+   cybris` still answers after a fresh `aws sso login --profile cybris`.
+
+Proved 2026-11-19 on this account, with the ReadOnly profile and the block
+above taken from this README: a plan against an empty local state, with the
+live `AdministratorAccess` set standing in for the hand-made one, read `2 to
+import, 109 to add, 0 to change, 0 to destroy`, both imported addresses
+named; a plan against the real state with the same file and
+`-refresh=false` read no changes, so the blocks are inert on a live
+account.
+
 ## First apply: the order matters (done 2026-10-05; kept for a new account)
 
 Every command runs from this directory with `AWS_PROFILE=cybris` exported and
 `op.env` in place; `tofu` is the 1Password wrapper from the repository README.
 
-1. **Detach the seven redundant managed policies** from the existing
+1. **This account only (skip on a new account): detach the seven redundant managed policies** from the existing
    `AdministratorAccess` permission set, so the plan adopts it without a
    change it cannot express. Then provision the set so the account sees it.
 
