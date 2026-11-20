@@ -1,6 +1,10 @@
 # Changelog
 
+- 2026-11-19
+  - `stacks/10-account/README.md` gives the first administrator sign-in on an empty account: an `AdministratorAccess` permission set made by hand from the predefined set and assigned to the administrator user, adopted by `import` blocks (the set and its managed policy attachment, both found by name, so nothing account-specific is committed) in the stack's first apply, after which the hand-made user assignment is removed. A new Identity Center instance has no permission set and this stack is what creates `AdministratorAccess`, so the root README listed the first sign-in as unproven; the root user was rejected because it needs access keys. Found internally from backlog item 526.
+  - Proved on this account with the ReadOnly profile: a plan against an empty local state, with the live set standing in for the hand-made one, read 2 to import, 109 to add, 0 to change, 0 to destroy, and a plan against the real state with the same blocks read no changes.
 - 2026-11-18
+  - `main` requires the `Snyk` check in aws-cybris-net, freebsd-cloud-img, homebrew-tap, mcp-allowlist-proxy, and py-findbig (`scripts/github-settings/*.conf`), so a high or critical issue in their CI tool pins cannot merge; zpool-status-exporter already required it.
   - A Snyk job in continuous integration (CI) tests the Python tools pinned in `ci/requirements.txt`, which Snyk's repository import skips, and fails on any high or critical issue, a scan error, or a missing `SNYK_TOKEN` secret. The Snyk CLI 1.1308.4 is downloaded from its GitHub release and verified by its checksum; found internally from backlog item 572.
   - Checkov moves to `ci/checkov/requirements.txt` and its own virtual environment, because it needs `packaging` below 24 and virtualenv 21.14.7, now pinned past two high Snyk findings, needs 26.3 or later. `.snyk` ignores until 2027-02-17 a critical finding in ply 3.11 and a high one in ecdsa 0.19.2, both brought in by checkov, which no version fixes and which checkov's use does not reach.
   - The weekly Tool drift job calls the Tool drift workflow v1.1.1, which also checks the `SNYK_VERSION` pin against the latest Snyk CLI release.
