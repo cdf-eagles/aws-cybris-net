@@ -478,10 +478,10 @@ The per-repository values live in `scripts/github-settings/<repository>.conf`:
 With `release_tags="true"`, the tags that `release_tag_pattern` matches may be
 created only by the administrator role (`release-tags-create`) and can never
 be moved or deleted by anyone (`release-tags-immutable`), so a published
-release cannot change. zpool-status-exporter protects `v*`; ansible-common
-protects every tag (`*`), because its releases are named as the version with
-no `v` and its other tag keeps the history of the roles it removed. A `*` does
-not match a slash, so a tag name with one is not covered.
+release cannot change. zpool-status-exporter and mcp-allowlist-proxy protect
+`v*`; ansible-common protects every tag (`*`), because its releases are named
+as the version with no `v` and its other tag keeps the history of the roles it
+removed. A `*` does not match a slash, so a tag name with one is not covered.
 
 This repository requires the `validate` check and both `plan` checks.
 `.github/dependabot.yml` keeps the pinned actions, the provider
