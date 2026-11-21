@@ -1,5 +1,7 @@
 # Changelog
 
+- 2026-11-21
+  - `mcp-allowlist-proxy` sets `release_tags`, so its `v*` release tags can be created only by the administrator role and never moved or deleted, now that it releases by signed tags. Found internally from backlog item 573.
 - 2026-11-19
   - `stacks/10-account/README.md` gives the first administrator sign-in on an empty account: an `AdministratorAccess` permission set made by hand from the predefined set and assigned to the administrator user, adopted by `import` blocks (the set and its managed policy attachment, both found by name, so nothing account-specific is committed) in the stack's first apply, after which the hand-made user assignment is removed. A new Identity Center instance has no permission set and this stack is what creates `AdministratorAccess`, so the root README listed the first sign-in as unproven; the root user was rejected because it needs access keys. Found internally from backlog item 526.
   - Proved on this account with the ReadOnly profile: a plan against an empty local state, with the live set standing in for the hand-made one, read 2 to import, 109 to add, 0 to change, 0 to destroy, and a plan against the real state with the same blocks read no changes.
