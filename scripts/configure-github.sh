@@ -3,7 +3,7 @@
 # GitHub CLI (gh), signed in as an owner. Safe to run again: every call sets
 # state rather than adding it. Per-repository values (allowed third-party
 # actions, required checks, deploy-key bypass, release tags and their
-# pattern) are read from
+# pattern, GitHub Pages) are read from
 # scripts/github-settings/<repository>.conf.
 #
 #   sh scripts/configure-github.sh aws-cybris-net            # apply
@@ -35,6 +35,7 @@ required_checks=""
 bypass_deploy_keys="false"
 release_tags="false"
 release_tag_pattern="v*"
+pages="false"
 # shellcheck source=/dev/null
 . "$conf"
 repo="$owner/$name"
@@ -45,6 +46,11 @@ case "$release_tag_pattern" in
   ""|*\"*|*\\*|*\ *|refs/*)
     printf '%s\n' "release_tag_pattern in $conf is not a plain tag pattern: '$release_tag_pattern'" >&2
     exit 2 ;;
+esac
+
+case "$pages" in
+  false|workflow) ;;
+  *) printf '%s\n' "pages in $conf must be false or workflow: '$pages'" >&2; exit 2 ;;
 esac
 
 # Auth preflight: stop before any other call if gh cannot act as an admin.
@@ -90,6 +96,13 @@ show() {
     gh api "repos/$repo/private-vulnerability-reporting" --jq '"private vulnerability reporting: \(.enabled)"' 2>/dev/null || echo "private vulnerability reporting: unknown"
   else
     echo "private vulnerability reporting: not offered ($visibility repository)"
+  fi
+  if gh api "repos/$repo/pages" >/dev/null 2>&1; then
+    gh api "repos/$repo/pages" --jq '"pages: build_type \(.build_type), \(.html_url)"'
+    gh api "repos/$repo/environments/github-pages" --jq '"environment github-pages: deployment_branch_policy \(.deployment_branch_policy)"' 2>/dev/null || echo "environment github-pages: none"
+    gh api "repos/$repo/environments/github-pages/deployment-branch-policies" --jq '"environment github-pages: branches \([.branch_policies[] | "\(.type):\(.name)"])"' 2>/dev/null || true
+  else
+    echo "pages: not enabled"
   fi
 }
 
@@ -265,6 +278,29 @@ JSON
 JSON
 )
   put_ruleset release-tags-immutable "$fixed_id" "$fixed_rs"
+fi
+
+if [ "$pages" = "workflow" ]; then
+  # GitHub Pages built by the repository's Actions workflows, deployed only
+  # from the default branch through the github-pages environment.
+  if gh api "repos/$repo/pages" >/dev/null 2>&1; then
+    gh api -X PUT "repos/$repo/pages" -f build_type=workflow >/dev/null
+    echo "pages: build type set to workflow"
+  else
+    gh api -X POST "repos/$repo/pages" -f build_type=workflow >/dev/null
+    echo "pages: enabled, built by workflow"
+  fi
+  gh api -X PUT "repos/$repo/environments/github-pages" --input - >/dev/null <<'JSON'
+{"deployment_branch_policy":{"protected_branches":false,"custom_branch_policies":true}}
+JSON
+  for policy in $(gh api "repos/$repo/environments/github-pages/deployment-branch-policies" --jq '.branch_policies[] | select(.name != "'"$default_branch"'" or .type != "branch") | .id'); do
+    gh api -X DELETE "repos/$repo/environments/github-pages/deployment-branch-policies/$policy" >/dev/null
+    echo "environment github-pages: removed deployment policy $policy"
+  done
+  if [ -z "$(gh api "repos/$repo/environments/github-pages/deployment-branch-policies" --jq '.branch_policies[] | select(.name == "'"$default_branch"'" and .type == "branch") | .id')" ]; then
+    gh api -X POST "repos/$repo/environments/github-pages/deployment-branch-policies" -f name="$default_branch" -f type=branch >/dev/null
+  fi
+  echo "environment github-pages: deployments from $default_branch only"
 fi
 
 echo
