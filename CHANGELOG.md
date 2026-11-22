@@ -1,5 +1,7 @@
 # Changelog
 
+- 2026-11-22
+  - `py-findbig` sets `release_tags`, so its `v*` release tags (the signed `vX.Y.Z-rc.N` and `vX.Y.Z` tags, and the older `v0.2` and `v0.2.1`) can be created only by the administrator role and never moved or deleted. Its final release republishes the release candidate's files on the promise that the candidate's tag still names the commit that built them, and without the rulesets a tag could be moved or deleted. Found internally from backlog item 573; tracked as backlog item 623.
 - 2026-11-21
   - `mcp-allowlist-proxy` sets `release_tags`, so its `v*` release tags can be created only by the administrator role and never moved or deleted, now that it releases by signed tags. Found internally from backlog item 573.
 - 2026-11-19
