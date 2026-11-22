@@ -474,6 +474,7 @@ The per-repository values live in `scripts/github-settings/<repository>.conf`:
 | `bypass_deploy_keys` | `true` lets the repository's deploy keys bypass the `main` ruleset |
 | `release_tags` | `true` for a repository that releases by signed tags: see below |
 | `release_tag_pattern` | the tags `release_tags` protects, an fnmatch pattern under `refs/tags/`; `v*` when unset |
+| `pages` | `workflow` publishes GitHub Pages from the repository's Actions workflows; `false` (the default) leaves Pages alone |
 
 With `release_tags="true"`, the tags that `release_tag_pattern` matches may be
 created only by the administrator role (`release-tags-create`) and can never
@@ -483,6 +484,11 @@ py-findbig protect `v*`; ansible-common protects every tag (`*`), because its
 releases are named as the version with no `v` and its other tag keeps the
 history of the roles it removed. A `*` does not match a slash, so a tag name
 with one is not covered.
+
+With `pages="workflow"`, GitHub Pages is enabled with the workflow build
+type, and the `github-pages` environment accepts deployments only from the
+default branch, so a workflow run on any other branch cannot publish the
+site. packages sets it.
 
 This repository requires the `validate` check and both `plan` checks.
 `.github/dependabot.yml` keeps the pinned actions, the provider
