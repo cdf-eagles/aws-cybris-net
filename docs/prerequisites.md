@@ -81,7 +81,7 @@ curl -fsSLO https://github.com/terraform-linters/tflint/releases/download/v0.66.
 curl -fsSLO https://github.com/terraform-linters/tflint/releases/download/v0.66.0/checksums.txt
 sha256sum --ignore-missing -c checksums.txt
 unzip -q tflint_linux_amd64.zip && sudo install -m 0755 tflint /usr/local/bin/tflint && rm tflint tflint_linux_amd64.zip checksums.txt
-curl -fsSL https://github.com/terraform-docs/terraform-docs/releases/download/v0.24.0/terraform-docs-v0.24.0-linux-amd64.tar.gz | tar -xz terraform-docs
+curl -fsSL https://github.com/terraform-docs/terraform-docs/releases/download/v0.25.1/terraform-docs-v0.25.1-linux-amd64.tar.gz | tar -xz terraform-docs
 sudo install -m 0755 terraform-docs /usr/local/bin/terraform-docs && rm terraform-docs
 curl -fsSL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash | bash
 sudo install -m 0755 actionlint /usr/local/bin/actionlint && rm actionlint
@@ -114,7 +114,7 @@ curl -fsSLO https://github.com/terraform-linters/tflint/releases/download/v0.66.
 curl -fsSLO https://github.com/terraform-linters/tflint/releases/download/v0.66.0/checksums.txt
 sha256sum --ignore-missing -c checksums.txt
 unzip -q tflint_linux_amd64.zip && sudo install -m 0755 tflint /usr/local/bin/tflint && rm tflint tflint_linux_amd64.zip checksums.txt
-curl -fsSL https://github.com/terraform-docs/terraform-docs/releases/download/v0.24.0/terraform-docs-v0.24.0-linux-amd64.tar.gz | tar -xz terraform-docs
+curl -fsSL https://github.com/terraform-docs/terraform-docs/releases/download/v0.25.1/terraform-docs-v0.25.1-linux-amd64.tar.gz | tar -xz terraform-docs
 sudo install -m 0755 terraform-docs /usr/local/bin/terraform-docs && rm terraform-docs
 curl -fsSL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash | bash
 sudo install -m 0755 actionlint /usr/local/bin/actionlint && rm actionlint

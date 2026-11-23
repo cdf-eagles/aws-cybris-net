@@ -1,5 +1,7 @@
 # Changelog
 
+- 2026-11-23
+  - Continuous integration (CI) pins terraform-docs 0.25.1 (by version and checksum) in place of 0.24.0, the versions this account's workstation installs through Homebrew. `.tool-versions` and `docs/prerequisites.md` move with it. Found internally from backlog item 637.
 - 2026-11-22
   - `scripts/github-settings/packages.conf` adds the public `packages` repository, the account's signed apt, dnf, and apk repository: squash merges only with the branch deleted on merge, Tool drift its only third-party workflow, and the `main` ruleset requires `Lint`, `Secret scan`, `Repository`, and `Snyk`. The new `pages` setting (`workflow`) has `configure-github.sh` enable GitHub Pages built by Actions and limit the `github-pages` environment to deployments from the default branch, and `--show` prints both. Found internally from backlog item 580.
   - `py-findbig` sets `release_tags`, so its `v*` release tags (the signed `vX.Y.Z-rc.N` and `vX.Y.Z` tags, and the older `v0.2` and `v0.2.1`) can be created only by the administrator role and never moved or deleted. Its final release republishes the release candidate's files on the promise that the candidate's tag still names the commit that built them, and without the rulesets a tag could be moved or deleted. Found internally from backlog item 573; tracked as backlog item 623.
