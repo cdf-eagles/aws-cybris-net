@@ -38,7 +38,8 @@ an in-place change that neither stops nor replaces the instance.
   from its subnet's /64, in place. The interface is adopted as its own
   resource because the address count on the instance resource would replace
   the instance. The host still needs its own configuration to use the
-  address; that is the `persephone.cybris.net` Ansible's job.
+  address; that is the job of the `cybris/` Ansible root in the `infrastructure`
+  repository.
 - Termination protection is switched on. The guard rails already deny
   terminating anything tagged `Protected = true`, but that denial binds the
   Identity Center sessions only; the instance flag binds everything.
@@ -101,8 +102,8 @@ both stay below the 1001 upward that the image's own accounts take (its
 
 Each step checks before it acts, so a second run changes nothing. The script
 logs to `/var/log/user_data.log`, ending with `user_data end <time>, <n>
-failure(s)`. Everything after the first boot is the `persephone.cybris.net`
-Ansible's job, the login account's password (`--tags user-config`), shell,
+failure(s)`. Everything after the first boot is the job of the `cybris/` Ansible root in
+the `infrastructure` repository, the login account's password (`--tags user-config`), shell,
 and groups included. Because the image and the user data are in
 `ignore_changes`, editing either changes nothing until the next explicit
 replacement.

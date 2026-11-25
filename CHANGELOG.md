@@ -1,5 +1,7 @@
 # Changelog
 
+- 2026-11-25
+  - `scripts/github-settings/infrastructure.conf` adds the private `infrastructure` repository, which now holds the Ansible configuration of `soundwave.sleem.net` and `persephone.cybris.net` in two roots: Tool drift its only third-party workflow, and `CI` the check the `main` ruleset requires. Those two repositories are archived, so their settings files are removed. `stacks/30-hosts/persephone/README.md` names the `cybris/` root of `infrastructure` as the Ansible that configures the host after its first boot. Found internally from backlog item 649.
 - 2026-11-23
   - Continuous integration (CI) pins terraform-docs 0.25.1 (by version and checksum) in place of 0.24.0, the versions this account's workstation installs through Homebrew. `.tool-versions` and `docs/prerequisites.md` move with it. Found internally from backlog item 637.
   - Continuous integration (CI) retries each pinned tool download (`--retry 8 --retry-delay 30 --retry-max-time 300 --retry-all-errors`) for up to about five minutes, so a passing error from GitHub's release download service, such as the 504 replies of 2026-11-08, no longer fails the job before its checks run; the SHA-256 check after each download is unchanged. Found internally from backlog item 516.
