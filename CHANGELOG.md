@@ -1,5 +1,7 @@
 # Changelog
 
+- 2026-11-27
+  - `scripts/github-settings/postfix-edge.conf` adds the public `postfix-edge` repository, which builds a Postfix container image for `linux/amd64` and `linux/arm64`: Tool drift its only third-party workflow, and the `main` ruleset requires `Lint`, `Secret scan`, `Build and test (amd64)`, `Build and test (arm64)`, and `Snyk`. It sets no `release_tags`, because the image's tags follow Postfix's own releases rather than release tags in the repository. Found internally from backlog item 170.
 - 2026-11-25
   - `scripts/github-settings/infrastructure.conf` adds the private `infrastructure` repository, which now holds the Ansible configuration of `soundwave.sleem.net` and `persephone.cybris.net` in two roots: Tool drift its only third-party workflow, and `CI` the check the `main` ruleset requires. Those two repositories are archived, so their settings files are removed. `stacks/30-hosts/persephone/README.md` names the `cybris/` root of `infrastructure` as the Ansible that configures the host after its first boot. Found internally from backlog item 649.
 - 2026-11-23
